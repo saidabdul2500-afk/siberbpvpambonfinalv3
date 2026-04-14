@@ -49,12 +49,6 @@ const SiberLogo: React.FC<SiberLogoProps> = ({ className = "w-16 h-16", showText
         strokeLinejoin="round"
       />
       
-      {showText && (
-        <g transform="translate(0, 220)">
-          <text x="100" y="0" textAnchor="middle" className="font-sans font-black" fill="#003399" style={{ fontSize: '40px' }}>SIBER</text>
-          <text x="100" y="45" textAnchor="middle" className="font-sans font-bold" fill="#003399" style={{ fontSize: '18px' }}>BPVP AMBON</text>
-        </g>
-      )}
     </svg>
     {showText && (
       <div className="mt-4 text-center">

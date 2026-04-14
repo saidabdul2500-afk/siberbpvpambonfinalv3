@@ -365,6 +365,7 @@ const App: React.FC = () => {
               <OrganizerView 
                 requests={requests}
                 onAction={handleStatusUpdate}
+                onLogout={handleLogout}
               />
             ) : currentUser.role === UserRole.KASUBAG_TU ? (
               <KasubagTUView 

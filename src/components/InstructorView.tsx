@@ -47,8 +47,16 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
   // Convert base64 to Blob URL for Detail Modal
   useEffect(() => {
     if (isDetailModalOpen && selectedRequestForDetail?.attachmentData) {
+      const data = selectedRequestForDetail.attachmentData;
+      
+      // If it's already a URL, just use it
+      if (data.startsWith('http://') || data.startsWith('https://')) {
+        setDetailBlobUrl(data);
+        return;
+      }
+
       try {
-        const binary = atob(selectedRequestForDetail.attachmentData);
+        const binary = atob(data);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) {
           bytes[i] = binary.charCodeAt(i);

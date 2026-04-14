@@ -15,6 +15,13 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ data }) => {
       return;
     }
     
+    // Check if data is a URL
+    if (data.startsWith('http://') || data.startsWith('https://')) {
+      setBlobUrl(data);
+      setError(null);
+      return;
+    }
+
     try {
       // Basic validation for base64
       if (data.length < 100) {

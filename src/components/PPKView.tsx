@@ -70,9 +70,13 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
     }
   };
 
-  const openPdfInNewTab = (base64Data: string) => {
+  const openPdfInNewTab = (data: string) => {
+    if (data.startsWith('http://') || data.startsWith('https://')) {
+      window.open(data, '_blank');
+      return;
+    }
     try {
-      const byteCharacters = atob(base64Data);
+      const byteCharacters = atob(data);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
