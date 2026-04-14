@@ -452,22 +452,29 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
             
             <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-8">
               <div className="grid grid-cols-1 gap-6">
-                <div>
+                <div className="relative">
                   <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 px-1">JENIS PELATIHAN</label>
-                  <select
-                    value={trainingType}
-                    onChange={(e) => {
-                      setTrainingType(e.target.value as TrainingType);
-                      setProgramPelatihan('');
-                      setKejuruan('');
-                    }}
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-100 focus:border-[#003399] transition-all cursor-pointer appearance-none"
-                  >
-                    <option value="" disabled>Pilih Jenis Pelatihan...</option>
-                    {Object.values(TrainingType).map((type) => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={trainingType}
+                      onChange={(e) => {
+                        setTrainingType(e.target.value as TrainingType);
+                        setProgramPelatihan('');
+                        setKejuruan('');
+                      }}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-100 focus:border-[#003399] transition-all cursor-pointer appearance-none"
+                    >
+                      <option value="" disabled>Pilih Jenis Pelatihan...</option>
+                      {Object.values(TrainingType).map((type) => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
                 
                 <div>
