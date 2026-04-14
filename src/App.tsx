@@ -184,56 +184,41 @@ const App: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const saveRequests = (newReqs: MaterialRequest[]) => {
+  const saveRequests = (newReqs: MaterialRequest[], action?: 'ADD' | 'UPDATE', targetReq?: MaterialRequest) => {
     setRequests(newReqs);
     // Trigger sync to Google Sheets
-    if (hasLoadedInitialData) {
-      syncToGoogleSheets(newReqs);
-    } else {
-      console.warn('Sync skipped: Initial data not loaded yet.');
-      alert("Peringatan: Data belum sinkron dengan Spreadsheet. Silakan tunggu sebentar atau refresh halaman.");
+    if (hasLoadedInitialData && action && targetReq) {
+      syncSingleRequest(targetReq, action);
     }
   };
 
-  const syncToGoogleSheets = async (data: MaterialRequest[]) => {
+  const syncSingleRequest = async (req: MaterialRequest, action: 'ADD' | 'UPDATE') => {
     setIsSyncing(true);
     setSyncError(null);
     try {
-      // Map instructor names
-      const mappedData = data.map((req) => ({
-        ...req,
-        instructorName: instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName
-      }));
-
-      console.log('Attempting to sync requests:', mappedData.length);
-
-      const response = await fetch('/api/sync-sheets', {
+      const response = await fetch('/api/sync-single', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ requests: mappedData }),
+        body: JSON.stringify({ 
+          action, 
+          request: {
+            ...req,
+            instructorName: instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName
+          } 
+        }),
       });
       
-      const text = await response.text();
-      let result;
-      try {
-        result = JSON.parse(text);
-      } catch (e) {
-        result = { error: 'Invalid JSON response', details: text.substring(0, 100) };
-      }
-
-      if (!response.ok) {
-        const errorMsg = result.error || 'Gagal sinkronisasi ke Spreadsheet';
-        console.warn('Sync failed:', errorMsg);
-        setSyncError(errorMsg);
-        alert(`Gagal Menyimpan ke Spreadsheet: ${errorMsg}. Data mungkin akan hilang saat halaman direfresh.`);
-      } else {
-        console.log('Sync success:', result.message);
-      }
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Gagal sinkronisasi');
+      
+      // Refresh data after sync to ensure all tabs are consistent
+      fetchRequests();
     } catch (error: any) {
-      console.error('Error calling sync API:', error);
-      setSyncError(error.message || 'Kesalahan jaringan saat sinkronisasi');
+      console.error('Sync error:', error);
+      setSyncError(error.message);
+      alert(`Gagal sinkronisasi: ${error.message}`);
     } finally {
       setIsSyncing(false);
     }
@@ -252,8 +237,8 @@ const App: React.FC = () => {
   };
 
   const handleInstructorSubmit = (req: Partial<MaterialRequest>) => {
-    const newReq: MaterialRequest = {
-      ...req,
+    const updatedReq = { 
+      ...req, 
       id: Math.random().toString(36).substr(2, 9),
       history: [{
         date: new Date().toISOString(),
@@ -262,10 +247,11 @@ const App: React.FC = () => {
         action: 'Pengajuan Dibuat'
       }]
     } as MaterialRequest;
-    saveRequests([newReq, ...requests]);
+    saveRequests([updatedReq, ...requests], 'ADD', updatedReq);
   };
 
   const handleStatusUpdate = (id: string, status: RequestStatus, comment?: string, signedDocName?: string, signedDocData?: string) => {
+    let targetReq: MaterialRequest | undefined;
     const updated = requests.map(r => {
       if (r.id === id) {
         const newHistory: HistoryLog = {
@@ -279,7 +265,7 @@ const App: React.FC = () => {
           comment
         };
 
-        return { 
+        targetReq = { 
           ...r, 
           status, 
           organizerComment: currentUser?.role === UserRole.ADMIN ? (comment || r.organizerComment) : r.organizerComment,
@@ -289,10 +275,13 @@ const App: React.FC = () => {
           signedDocumentData: signedDocData || r.signedDocumentData,
           history: [...(r.history || []), newHistory]
         };
+        return targetReq;
       }
       return r;
     });
-    saveRequests(updated);
+    if (targetReq) {
+      saveRequests(updated, 'UPDATE', targetReq);
+    }
   };
 
   const handleClearAll = () => {
