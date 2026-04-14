@@ -28,14 +28,24 @@ const App: React.FC = () => {
         try {
           const data = JSON.parse(text);
           if (data.users && Array.isArray(data.users)) {
-            const mappedUsers = data.users.map((u: any) => ({
-              username: u.username || u['Username'] || u.username,
-              password: u.password || u['Password'] || u.password,
-              role: u.role || u['Role'] || u.role,
-              displayName: u.displayName || u['Nama Lengkap'] || u.display_name,
-              vocation: u.vocation || u['Kejuruan'] || u.vocation
-            }));
-            setUsers(mappedUsers);
+            const fetchedUsers = data.users.map((u: any) => ({
+              username: String(u.username || u['Username'] || u.username || '').trim(),
+              password: String(u.password || u['Password'] || u.password || '').trim(),
+              role: (u.role || u['Role'] || u.role || '').toLowerCase(),
+              displayName: u.displayName || u['Nama Lengkap'] || u.display_name || '',
+              vocation: u.vocation || u['Kejuruan'] || u.vocation || ''
+            })).filter(u => u.username && u.password);
+
+            if (fetchedUsers.length > 0) {
+              // Merge with MOCK_USERS, fetched users take priority
+              const combinedUsers = [...fetchedUsers];
+              MOCK_USERS.forEach(mockUser => {
+                if (!combinedUsers.find(u => u.username.toLowerCase() === mockUser.username.toLowerCase())) {
+                  combinedUsers.push(mockUser);
+                }
+              });
+              setUsers(combinedUsers);
+            }
           }
         } catch (e) {
           console.error('Failed to parse users JSON:', text.substring(0, 100));

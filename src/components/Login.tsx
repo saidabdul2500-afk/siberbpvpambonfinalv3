@@ -22,7 +22,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, users }) => {
 
     // Simulasi delay loading agar terasa seperti sistem sedang memproses
     setTimeout(() => {
-      const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+      const user = users.find(u => 
+        u.username.toLowerCase().trim() === username.toLowerCase().trim() && 
+        u.password.toString().trim() === password.trim()
+      );
       if (user) {
         onLogin(user);
       } else {
