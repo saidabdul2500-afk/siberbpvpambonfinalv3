@@ -34,7 +34,8 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ data }) => {
 
     try {
       // Basic validation for base64
-      if (data.length < 100) {
+      // Some valid PDFs can be very small, reducing threshold to 20 chars
+      if (data.length < 20) {
         throw new Error("Data file tidak valid atau terlalu kecil.");
       }
 

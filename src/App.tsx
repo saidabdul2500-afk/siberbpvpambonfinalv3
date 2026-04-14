@@ -83,6 +83,28 @@ const App: React.FC = () => {
 
             let status = getVal(['status', 'Status']);
             const trainingType = getVal(['trainingType', 'Jenis Pelatihan', 'training_type']);
+            const signedData = getVal(['signedDocumentData', 'Data TTE', 'signed_document_data', 'TTE']);
+            let vocation = getVal(['vocation', 'Kejuruan', 'kejuruan']);
+
+            // Fix for column shift: if status looks like a training type, it's probably in the wrong column
+            // and the real status might be in the 'Data TTE' column (as seen in user's spreadsheet)
+            if (status === TrainingType.PBK || status === TrainingType.PBL) {
+              // Check if signedData contains a valid RequestStatus string
+              const possibleStatus = Object.values(RequestStatus).find(s => s === signedData);
+              if (possibleStatus) {
+                status = possibleStatus;
+              } else if (!status || status === '-') {
+                status = RequestStatus.PENDING;
+              }
+            }
+            
+            // If vocation is missing but 'Data Lampiran' contains a vocation string
+            if (!vocation || vocation === '-') {
+              const possibleVocation = getVal(['Data Lampiran', 'Lampiran']);
+              if (Object.values(VocationalCategory).includes(possibleVocation as VocationalCategory)) {
+                vocation = possibleVocation;
+              }
+            }
 
             // Normalize status for old data strings
             if (status === 'Menunggu Verifikasi Teknis') status = RequestStatus.PENDING;
@@ -90,12 +112,6 @@ const App: React.FC = () => {
             if (status === 'Lolos Verifikasi Administrasi (TU)') status = RequestStatus.APPROVED_ADMIN;
             if (status === 'Dalam Proses Pengadaan') status = RequestStatus.APPROVED_FINAL;
             if (status === 'Selesai Pengadaan') status = RequestStatus.COMPLETED;
-
-            // Fix for potential column shift: if status looks like a training type, it's probably wrong
-            if (status === TrainingType.PBK || status === TrainingType.PBL) {
-              console.warn(`Detected column shift for request ${getVal(['id', 'ID Pengajuan'])}. Status was ${status}, resetting to PENDING.`);
-              status = RequestStatus.PENDING;
-            }
 
             // If status is empty but it's a new request, default to PENDING
             if (!status || status === '-') {
@@ -106,7 +122,7 @@ const App: React.FC = () => {
               id: getVal(['id', 'ID Pengajuan', 'id_pengajuan']),
               instructorName: getVal(['instructorName', 'Nama Instruktur', 'nama_instruktur']),
               trainingTitle: getVal(['trainingTitle', 'Program Pelatihan', 'training_title']),
-              vocation: getVal(['vocation', 'Kejuruan', 'kejuruan']),
+              vocation: vocation,
               proglat: getVal(['proglat', 'Proglat']),
               dateSubmitted: getVal(['dateSubmitted', 'Tanggal', 'tanggal']),
               status: status,
@@ -117,12 +133,12 @@ const App: React.FC = () => {
               attachmentName: getVal(['attachmentName', 'Nama Lampiran', 'attachment_name']),
               attachmentData: getVal(['attachmentData', 'Data Lampiran', 'attachment_data', 'Lampiran']),
               signedDocumentName: getVal(['signedDocumentName', 'Nama TTE', 'signed_document_name']),
-              signedDocumentData: getVal(['signedDocumentData', 'Data TTE', 'signed_document_data', 'TTE']),
+              signedDocumentData: signedData,
               history: Array.isArray(req.history) ? req.history : (typeof req.history === 'string' ? JSON.parse(req.history) : []),
               items: Array.isArray(req.items) ? req.items : [],
               trainingType: trainingType,
               programPelatihan: getVal(['programPelatihan', 'Program Pelatihan', 'program_pelatihan']),
-              kejuruan: getVal(['kejuruan', 'Kejuruan'])
+              kejuruan: vocation
             };
           });
           
@@ -253,7 +269,7 @@ const App: React.FC = () => {
   const handleStatusUpdate = (id: string, status: RequestStatus, comment?: string, signedDocName?: string, signedDocData?: string) => {
     let targetReq: MaterialRequest | undefined;
     const updated = requests.map(r => {
-      if (r.id === id) {
+      if (String(r.id) === String(id)) {
         const newHistory: HistoryLog = {
           date: new Date().toISOString(),
           user: currentUser?.displayName || 'Sistem',
@@ -317,9 +333,9 @@ const App: React.FC = () => {
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
               <span className="text-[9px] font-black text-red-600 uppercase tracking-widest truncate max-w-[150px]" title={syncError}>Error Sync</span>
               <button 
-                onClick={() => syncToGoogleSheets(requests)}
+                onClick={fetchRequests}
                 className="ml-1 p-1 hover:bg-red-50 rounded-md text-red-600"
-                title="Coba Lagi"
+                title="Refresh Data"
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               </button>
