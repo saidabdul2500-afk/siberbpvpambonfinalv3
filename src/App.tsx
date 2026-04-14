@@ -24,11 +24,21 @@ const App: React.FC = () => {
     const fetchUsers = async () => {
       try {
         const response = await fetch('/api/users');
-        if (response.ok) {
-          const data = await response.json();
+        const text = await response.text();
+        try {
+          const data = JSON.parse(text);
           if (data.users && Array.isArray(data.users)) {
-            setUsers(data.users);
+            const mappedUsers = data.users.map((u: any) => ({
+              username: u.username || u['Username'] || u.username,
+              password: u.password || u['Password'] || u.password,
+              role: u.role || u['Role'] || u.role,
+              displayName: u.displayName || u['Nama Lengkap'] || u.display_name,
+              vocation: u.vocation || u['Kejuruan'] || u.vocation
+            }));
+            setUsers(mappedUsers);
           }
+        } catch (e) {
+          console.error('Failed to parse users JSON:', text.substring(0, 100));
         }
       } catch (error) {
         console.error('Failed to fetch users from Sheets:', error);
@@ -50,11 +60,36 @@ const App: React.FC = () => {
     const fetchRequests = async () => {
       try {
         const response = await fetch('/api/requests');
-        if (response.ok) {
-          const data = await response.json();
+        const text = await response.text();
+        
+        try {
+          const data = JSON.parse(text);
           if (data.requests && Array.isArray(data.requests)) {
-            setRequests(data.requests);
+            // Map keys if they come from Indonesian headers
+            const mappedRequests = data.requests.map((req: any) => ({
+              id: req.id || req['ID Pengajuan'] || req.id_pengajuan,
+              instructorName: req.instructorName || req['Nama Instruktur'] || req.nama_instruktur,
+              trainingTitle: req.trainingTitle || req['Program Pelatihan'] || req.proglat || req.training_title,
+              vocation: req.vocation || req['Kejuruan'] || req.kejuruan,
+              proglat: req.proglat || req['Proglat'] || req.proglat,
+              dateSubmitted: req.dateSubmitted || req['Tanggal'] || req.tanggal,
+              status: req.status || req['Status'] || req.status,
+              notes: req.notes || req['Catatan'] || req.notes,
+              organizerComment: req.organizerComment || req['Catatan Penyelenggara'] || req.organizer_comment,
+              tuComment: req.tuComment || req['Catatan TU'] || req.tu_comment,
+              ppkComment: req.ppkComment || req['Catatan PPK'] || req.ppk_comment,
+              attachmentName: req.attachmentName || req['Nama Lampiran'] || req.attachment_name,
+              signedDocumentName: req.signedDocumentName || req['Nama TTE'] || req.signed_document_name,
+              history: Array.isArray(req.history) ? req.history : (typeof req.history === 'string' ? JSON.parse(req.history) : []),
+              items: Array.isArray(req.items) ? req.items : [],
+              trainingType: req.trainingType || req['Jenis Pelatihan'] || req.training_type,
+              programPelatihan: req.programPelatihan || req['Program Pelatihan'] || req.program_pelatihan,
+              kejuruan: req.kejuruan || req['Kejuruan'] || req.kejuruan
+            }));
+            setRequests(mappedRequests);
           }
+        } catch (e) {
+          console.error('Failed to parse requests JSON:', text.substring(0, 100));
         }
       } catch (error) {
         console.error('Failed to fetch requests from Sheets:', error);
@@ -70,12 +105,15 @@ const App: React.FC = () => {
   };
 
   const syncToGoogleSheets = async (data: MaterialRequest[]) => {
+    setIsSyncing(true);
     try {
       // Map instructor names and EXCLUDE large base64 data to avoid 413 Payload Too Large
       const mappedData = data.map(({ attachmentData, signedDocumentData, ...req }) => ({
         ...req,
-        instructorName: instructorNameMap[req.instructorName.toUpperCase()] || req.instructorName
+        instructorName: instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName
       }));
+
+      console.log('Attempting to sync requests:', mappedData.length);
 
       const response = await fetch('/api/sync-sheets', {
         method: 'POST',
@@ -85,24 +123,28 @@ const App: React.FC = () => {
         body: JSON.stringify({ requests: mappedData }),
       });
       
-      const result = await response.json();
+      const text = await response.text();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch (e) {
+        result = { error: 'Invalid JSON response', details: text.substring(0, 100) };
+      }
+
       if (!response.ok) {
-        console.warn('Sync failed:', result.error);
+        console.warn('Sync failed:', result.error || result);
         
         // Handle 403 error specifically with a pop-up
         if (response.status === 403 || (result.error && result.error.includes('403'))) {
           alert("Gagal Sinkronisasi (Akses Ditolak): Pastikan Anda sudah membagikan Spreadsheet ke email Service Account sebagai EDITOR.");
-        }
-        
-        // If it's a configuration error, we might want to alert the user once
-        if (result.error && result.error.includes('Konfigurasi')) {
-          console.error('Google Sheets Configuration Error:', result.error);
         }
       } else {
         console.log('Sync success:', result.message);
       }
     } catch (error) {
       console.error('Error calling sync API:', error);
+    } finally {
+      setIsSyncing(false);
     }
   };
 

@@ -155,7 +155,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     Verifikasi Administrasi: {selectedRequest.attachmentName || 'Dokumen'}
                   </h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                    {instructorNameMap[selectedRequest.instructorName.toUpperCase()] || selectedRequest.instructorName} • {selectedRequest.trainingTitle}
+                    {instructorNameMap[(selectedRequest.instructorName || '').toUpperCase()] || selectedRequest.instructorName} • {selectedRequest.trainingTitle}
                   </p>
                 </div>
               </div>
@@ -454,7 +454,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                   <td className="px-8 py-6 text-xs font-black text-slate-400">{(index + 1).toString().padStart(2, '0')}</td>
                     <td className="px-8 py-6">
                       <div className="text-sm font-black text-slate-800 uppercase tracking-tight">
-                        {instructorNameMap[req.instructorName.toUpperCase()] || req.instructorName}
+                        {instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName}
                       </div>
                       <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase border mt-1 inline-block ${VOCATION_COLORS[req.vocation]}`}>
                         {req.vocation}
@@ -531,7 +531,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     </td>
                     <td className="px-8 py-6">
                       <div className="text-xs font-bold text-slate-600 uppercase tracking-tighter">
-                        {instructorNameMap[req.instructorName.toUpperCase()] || req.instructorName}
+                        {instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName}
                       </div>
                       <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Instruktur</div>
                     </td>

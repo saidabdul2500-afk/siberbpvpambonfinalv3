@@ -125,7 +125,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-xs font-bold text-slate-400 uppercase">Instruktur</span>
-                      <span className="text-xs font-black text-slate-700 uppercase">{instructorNameMap[selectedRequest.instructorName.toUpperCase()] || selectedRequest.instructorName}</span>
+                      <span className="text-xs font-black text-slate-700 uppercase">{instructorNameMap[(selectedRequest.instructorName || '').toUpperCase()] || selectedRequest.instructorName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-xs font-bold text-slate-400 uppercase">Kejuruan</span>
@@ -299,7 +299,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                   <td className="px-8 py-6 text-xs font-black text-slate-400">{(index + 1).toString().padStart(2, '0')}</td>
                   <td className="px-8 py-6">
                     <div className="text-sm font-black text-slate-800 uppercase tracking-tight">
-                      {instructorNameMap[req.instructorName.toUpperCase()] || req.instructorName}
+                      {instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName}
                     </div>
                     <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase border mt-1 inline-block ${VOCATION_COLORS[req.vocation]}`}>
                       {req.vocation}
@@ -376,7 +376,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                     </td>
                     <td className="px-8 py-6">
                       <div className="text-xs font-bold text-slate-600 uppercase tracking-tighter">
-                        {instructorNameMap[req.instructorName.toUpperCase()] || req.instructorName}
+                        {instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName}
                       </div>
                       <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Instruktur</div>
                     </td>

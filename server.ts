@@ -11,6 +11,42 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // API Route for Google Sheets Sync
+app.get('/api/users', async (req, res) => {
+  const scriptUrl = process.env.APPS_SCRIPT_URL;
+  if (!scriptUrl) return res.status(500).json({ error: 'APPS_SCRIPT_URL not set' });
+  try {
+    const response = await fetch(`${scriptUrl}?action=getUsers`);
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      res.json(data);
+    } catch (e) {
+      console.error('Apps Script returned non-JSON for getUsers:', text.substring(0, 200));
+      res.status(500).json({ error: 'Apps Script returned invalid JSON', details: text.substring(0, 100) });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/requests', async (req, res) => {
+  const scriptUrl = process.env.APPS_SCRIPT_URL;
+  if (!scriptUrl) return res.status(500).json({ error: 'APPS_SCRIPT_URL not set' });
+  try {
+    const response = await fetch(`${scriptUrl}?action=getRequests`);
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      res.json(data);
+    } catch (e) {
+      console.error('Apps Script returned non-JSON for getRequests:', text.substring(0, 200));
+      res.status(500).json({ error: 'Apps Script returned invalid JSON', details: text.substring(0, 100) });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/sync-sheets', async (req, res) => {
   const { requests } = req.body;
   const scriptUrl = process.env.APPS_SCRIPT_URL;

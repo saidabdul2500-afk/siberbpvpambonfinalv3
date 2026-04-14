@@ -678,7 +678,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction }) => 
                   <td className="px-8 py-6 text-xs font-black text-slate-400">{(index + 1).toString().padStart(2, '0')}</td>
                   <td className="px-8 py-6">
                     <div className="text-sm font-black text-slate-800 uppercase tracking-tight">
-                      {instructorNameMap[req.instructorName.toUpperCase()] || req.instructorName}
+                      {instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName}
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -755,7 +755,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction }) => 
                   <td className="px-8 py-8">
                     <div className="flex flex-col gap-1.5">
                        <div className="text-sm text-slate-900 font-black uppercase tracking-tighter">
-                         {req.status === RequestStatus.APPROVED_TECHNICAL ? 'Sistem Logistik (TU)' : (instructorNameMap[req.instructorName.toUpperCase()] || req.instructorName)}
+                         {req.status === RequestStatus.APPROVED_TECHNICAL ? 'Sistem Logistik (TU)' : (instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName)}
                        </div>
                        {req.signedDocumentName && (
                          <div className="text-[10px] text-purple-600 font-black uppercase tracking-widest flex items-center gap-2">
