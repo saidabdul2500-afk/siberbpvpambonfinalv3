@@ -108,6 +108,7 @@ const App: React.FC = () => {
       } catch (e) {
         console.error('Failed to parse requests JSON:', text.substring(0, 100));
         setSyncError('Format data dari server tidak valid.');
+        setHasLoadedInitialData(true);
       }
     } catch (error) {
       console.error('Failed to fetch requests from Sheets:', error);

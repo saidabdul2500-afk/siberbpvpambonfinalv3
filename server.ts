@@ -15,7 +15,10 @@ app.get('/api/users', async (req, res) => {
   const scriptUrl = process.env.APPS_SCRIPT_URL;
   if (!scriptUrl) return res.status(500).json({ error: 'APPS_SCRIPT_URL not set' });
   try {
-    const response = await fetch(`${scriptUrl}?action=getUsers`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(`${scriptUrl}?action=getUsers`, { signal: controller.signal });
+    clearTimeout(timeout);
     const text = await response.text();
     try {
       const data = JSON.parse(text);
@@ -33,7 +36,10 @@ app.get('/api/requests', async (req, res) => {
   const scriptUrl = process.env.APPS_SCRIPT_URL;
   if (!scriptUrl) return res.status(500).json({ error: 'APPS_SCRIPT_URL not set' });
   try {
-    const response = await fetch(`${scriptUrl}?action=getRequests`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(`${scriptUrl}?action=getRequests`, { signal: controller.signal });
+    clearTimeout(timeout);
     const text = await response.text();
     try {
       const data = JSON.parse(text);
@@ -90,7 +96,7 @@ async function setupVite() {
     app.use(vite.middlewares);
   } else {
     app.use(express.static(path.join(__dirname, 'dist')));
-    app.get('*', (req, res) => {
+    app.get('*all', (req, res) => {
       res.sendFile(path.join(__dirname, 'dist', 'index.html'));
     });
   }
