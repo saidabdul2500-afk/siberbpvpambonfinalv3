@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { MaterialRequest, RequestStatus, VOCATION_COLORS, MaterialItem, instructorNameMap, UserRole } from '../types';
 import { formatSafeDate, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
+import PDFPreview from './PDFPreview';
 
 interface OrganizerViewProps {
   requests: MaterialRequest[];
@@ -297,6 +298,22 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction }) => 
                 <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full border border-emerald-100 mb-4">
                   <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
                   <span className="text-[10px] font-black uppercase tracking-widest">Data berhasil diekstraksi dari file yang diunggah.</span>
+                </div>
+
+                {/* PDF Preview Section */}
+                <div className="mb-8 space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Pratinjau Dokumen</h4>
+                  <div className="border-2 border-slate-100 rounded-[2rem] overflow-hidden bg-slate-50 h-[500px] relative shadow-inner">
+                    {previewData ? (
+                      <PDFPreview data={previewData} />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-4">
+                        <svg className="w-16 h-16 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        <p className="text-xs font-bold uppercase tracking-widest">Pratinjau tidak tersedia</p>
+                        <p className="text-[10px] italic">Unggah file baru untuk melihat fitur pratinjau</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
@@ -696,19 +713,18 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction }) => 
                     </span>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="max-w-[150px] truncate text-[10px] font-bold text-slate-500 italic" title={getLatestComment(req) || ''}>
-                      {getLatestComment(req) || '-'}
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-right flex gap-2 justify-end">
-                    {(req.organizerComment || req.tuComment || req.ppkComment) && (
+                    {(req.organizerComment || req.tuComment || req.ppkComment) ? (
                       <button 
                         onClick={() => openNoteModal(req)}
-                        className="text-[10px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-6 py-3 rounded-xl transition-all tracking-[0.15em] border border-amber-100 shadow-sm active:scale-95"
+                        className="text-[9px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-4 py-2 rounded-lg transition-all tracking-widest border border-amber-100 shadow-sm active:scale-95 whitespace-nowrap"
                       >
                         Lihat Catatan
                       </button>
+                    ) : (
+                      <span className="text-xs font-bold text-slate-400">-</span>
                     )}
+                  </td>
+                  <td className="px-8 py-6 text-right">
                     <button 
                       onClick={() => handleOpenApproval(req)}
                       className="text-[10px] font-black uppercase text-[#003399] hover:text-white bg-blue-50 hover:bg-[#003399] px-6 py-3 rounded-xl transition-all tracking-[0.15em] border border-blue-100 shadow-sm active:scale-95"
@@ -773,7 +789,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction }) => 
                   <td className="px-8 py-8 text-center">
                     <div className="flex flex-col gap-2 items-center">
                       <button 
-                        onClick={() => handleOpenPreview(req.attachmentName || 'Dokumen', req.items, req.attachmentData)}
+                        onClick={() => handleOpenPreview(req.signedDocumentName || req.attachmentName || 'Dokumen', req.items, req.signedDocumentData || req.attachmentData)}
                         className="text-[9px] font-black uppercase text-[#003399] hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-all tracking-widest border border-blue-100 w-full"
                       >
                         Lihat Dokumen

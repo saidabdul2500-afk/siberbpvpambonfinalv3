@@ -225,12 +225,13 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                   )}
                 </div>
                 <div className="border-2 border-slate-100 rounded-[2rem] overflow-hidden bg-slate-50 h-[500px] relative">
-                  {selectedRequest.attachmentData ? (
-                    <PDFPreview data={selectedRequest.attachmentData} />
+                  {(selectedRequest.signedDocumentData || selectedRequest.attachmentData) ? (
+                    <PDFPreview data={selectedRequest.signedDocumentData || selectedRequest.attachmentData!} />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-4">
                       <svg className="w-16 h-16 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                       <p className="text-xs font-bold uppercase tracking-widest">Pratinjau tidak tersedia</p>
+                      <p className="text-[10px] italic">Unggah file baru untuk melihat fitur pratinjau</p>
                     </div>
                   )}
                 </div>

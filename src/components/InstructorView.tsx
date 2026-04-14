@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MaterialRequest, RequestStatus, VocationalCategory, VOCATION_COLORS, PROGLAT_MAPPING, User, TrainingType, PBK_PROGRAMS, PBL_PROGRAMS } from '../types';
 import { formatSafeDate, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
+import PDFPreview from './PDFPreview';
 
 interface InstructorViewProps {
   user: User;
@@ -228,17 +229,12 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                 </div>
                 
                 <div className="border-2 border-slate-100 rounded-[2rem] bg-slate-50 shadow-inner h-[600px] relative group overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300">
-                  {detailBlobUrl ? (
-                    <iframe 
-                      src={`${detailBlobUrl}#toolbar=1&navpanes=0&scrollbar=1`} 
-                      className="w-full h-full border-none" 
-                      title="PDF Preview"
-                      scrolling="yes"
-                    />
+                  {(selectedRequestForDetail.signedDocumentData || selectedRequestForDetail.attachmentData) ? (
+                    <PDFPreview data={selectedRequestForDetail.signedDocumentData || selectedRequestForDetail.attachmentData!} />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-4 bg-slate-50">
                       <svg className="w-20 h-20 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      <p className="text-xs font-bold uppercase tracking-widest">Pratinjau tidak tersedia untuk data simulasi</p>
+                      <p className="text-xs font-bold uppercase tracking-widest">Pratinjau tidak tersedia</p>
                       <p className="text-[10px] italic">Unggah file baru untuk melihat fitur pratinjau</p>
                     </div>
                   )}
@@ -645,20 +641,23 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                     </span>
                   </td>
                   <td className="px-6 py-6">
-                    <div className="max-w-[150px] truncate text-[10px] font-bold text-slate-500 italic" title={getLatestComment(req) || ''}>
-                      {getLatestComment(req) || '-'}
-                    </div>
+                    {(req.organizerComment || req.tuComment || req.ppkComment) ? (
+                      <button 
+                        onClick={() => openNoteModal(req)}
+                        className="text-[9px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-4 py-2 rounded-lg transition-all tracking-widest border border-amber-100 shadow-sm active:scale-95 whitespace-nowrap"
+                      >
+                        Lihat Catatan
+                      </button>
+                    ) : (
+                      <span className="text-xs font-bold text-slate-400">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-6 text-right">
                     <button 
-                      onClick={() => (req.organizerComment || req.tuComment || req.ppkComment) ? openNoteModal(req) : openDetailModal(req)}
-                      className={`text-[10px] font-black uppercase px-5 py-2.5 rounded-xl transition-all tracking-[0.15em] border ${
-                        (req.organizerComment || req.tuComment || req.ppkComment) 
-                          ? 'text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 border-amber-100' 
-                          : 'text-[#003399] hover:text-white bg-blue-50 hover:bg-[#003399] border-blue-100'
-                      }`}
+                      onClick={() => openDetailModal(req)}
+                      className="text-[10px] font-black uppercase px-5 py-2.5 rounded-xl transition-all tracking-[0.15em] border text-[#003399] hover:text-white bg-blue-50 hover:bg-[#003399] border-blue-100 shadow-sm active:scale-95"
                     >
-                      {(req.organizerComment || req.tuComment || req.ppkComment) ? 'Lihat Catatan' : 'Detail'}
+                      Detail
                     </button>
                   </td>
                 </tr>
