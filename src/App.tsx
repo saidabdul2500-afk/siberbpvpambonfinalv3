@@ -68,7 +68,7 @@ const App: React.FC = () => {
       
       try {
         const data = JSON.parse(text);
-        if (data.requests && Array.isArray(data.requests)) {
+        if (data && data.requests && Array.isArray(data.requests)) {
           // Map keys if they come from Indonesian headers
           const mappedRequests = data.requests.map((req: any) => ({
             id: req.id || req['ID Pengajuan'] || req.id_pengajuan,
@@ -98,14 +98,21 @@ const App: React.FC = () => {
           });
           setHasLoadedInitialData(true);
           setSyncError(null);
+        } else {
+          console.warn('Data format invalid or empty:', data);
+          setHasLoadedInitialData(true); // Still set to true so UI shows (even if empty)
+          if (data && data.error) {
+            setSyncError(data.error);
+          }
         }
       } catch (e) {
         console.error('Failed to parse requests JSON:', text.substring(0, 100));
-        setSyncError('Gagal memuat data dari Spreadsheet.');
+        setSyncError('Format data dari server tidak valid.');
       }
     } catch (error) {
       console.error('Failed to fetch requests from Sheets:', error);
       setSyncError('Koneksi ke Spreadsheet terputus.');
+      setHasLoadedInitialData(true);
     }
   };
 
@@ -320,9 +327,29 @@ const App: React.FC = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
         <div className="max-w-5xl mx-auto">
           {!hasLoadedInitialData ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="w-12 h-12 border-4 border-blue-100 border-t-[#003399] rounded-full animate-spin"></div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Memuat Data Sistem...</p>
+            <div className="flex flex-col items-center justify-center py-20 gap-6">
+              {syncError && !requests.length ? (
+                <>
+                  <div className="bg-red-50 p-6 rounded-[2rem] border-2 border-red-100 text-center max-w-md">
+                    <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p className="text-sm font-black text-red-600 uppercase tracking-widest mb-2">Gagal Memuat Data</p>
+                    <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest leading-relaxed mb-6">{syncError}</p>
+                    <button 
+                      onClick={() => fetchRequests()}
+                      className="bg-red-600 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-700 transition-all active:scale-95"
+                    >
+                      Coba Lagi
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 border-4 border-blue-100 border-t-[#003399] rounded-full animate-spin"></div>
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Memuat Data Sistem...</p>
+                </>
+              )}
             </div>
           ) : activeTab === 'home' ? (
             currentUser.role === UserRole.INSTRUCTOR ? (
