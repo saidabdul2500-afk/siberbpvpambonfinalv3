@@ -101,15 +101,20 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
   };
 
   const openPdfInNewTab = (base64Data: string) => {
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    try {
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (e) {
+      console.error("Gagal membuka PDF di tab baru:", e);
+      alert("Gagal membuka PDF. Data mungkin rusak atau tidak lengkap.");
     }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
   };
 
   const readFileAsBase64 = (file: File): Promise<string> => {
@@ -231,10 +236,28 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                   {(selectedRequest.signedDocumentData || selectedRequest.attachmentData) ? (
                     <PDFPreview data={selectedRequest.signedDocumentData || selectedRequest.attachmentData!} />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-4">
-                      <svg className="w-16 h-16 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      <p className="text-xs font-bold uppercase tracking-widest">Pratinjau tidak tersedia</p>
-                      <p className="text-[10px] italic">Unggah file baru untuk melihat fitur pratinjau</p>
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-6 bg-slate-50 p-8 text-center">
+                      <div className="bg-slate-100 p-6 rounded-full">
+                        <svg className="w-16 h-16 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-widest text-slate-500 mb-2">Pratinjau Tidak Tersedia</p>
+                        <p className="text-[11px] font-bold text-slate-400 max-w-xs mx-auto leading-relaxed">
+                          Data dokumen mungkin terlalu besar untuk disimpan di database Spreadsheet (Limit 50rb karakter). 
+                          Gunakan file PDF yang sudah dikompres atau berukuran kecil.
+                        </p>
+                      </div>
+                      
+                      {(selectedRequest.signedDocumentData || selectedRequest.attachmentData) && (
+                        <div className="flex gap-3">
+                          <button 
+                            onClick={() => openPdfInNewTab(selectedRequest.signedDocumentData || selectedRequest.attachmentData!)}
+                            className="bg-[#003399] text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-800 transition-all shadow-lg shadow-blue-100"
+                          >
+                            Buka di Tab Baru
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
