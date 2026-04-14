@@ -17,7 +17,17 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ data }) => {
     
     // Check if data is a URL (including blob URLs)
     if (data.startsWith('http://') || data.startsWith('https://') || data.startsWith('blob:')) {
-      setBlobUrl(data);
+      let finalUrl = data;
+      
+      // Transform Google Drive URL to embeddable preview URL
+      if (data.includes('drive.google.com')) {
+        const fileIdMatch = data.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileIdMatch && fileIdMatch[1]) {
+          finalUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+        }
+      }
+      
+      setBlobUrl(finalUrl);
       setError(null);
       return;
     }

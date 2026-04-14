@@ -101,7 +101,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
           </div>
           <div>
             <p className="font-black uppercase text-xs tracking-widest">Berhasil dikirim!</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Usulan Bahan Telah Disetujui</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Usulan Bahan Disetujui Final</p>
           </div>
         </div>
       )}

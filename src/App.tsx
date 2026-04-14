@@ -259,9 +259,9 @@ const App: React.FC = () => {
           user: currentUser?.displayName || 'Sistem',
           role: currentUser?.role || UserRole.ADMIN,
           action: status === RequestStatus.REVISION ? 'Dikembalikan (Revisi)' : 
-                  status === RequestStatus.APPROVED_TECHNICAL ? 'Disetujui Teknis' :
-                  status === RequestStatus.APPROVED_ADMIN ? 'Disetujui Administrasi' :
-                  status === RequestStatus.APPROVED_FINAL ? 'Disetujui Pengadaan' : 'Update Status',
+                  status === RequestStatus.APPROVED_TECHNICAL ? 'Diverifikasi Penyelenggara' :
+                  status === RequestStatus.APPROVED_ADMIN ? 'Disetujui TU' :
+                  status === RequestStatus.APPROVED_FINAL ? 'Disetujui PPK' : 'Update Status',
           comment
         };
 

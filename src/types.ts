@@ -27,9 +27,9 @@ export enum RequestStatus {
   DRAFT = 'Draft',
   PENDING = 'Menunggu Verifikasi Penyelenggara',
   REVISION = 'Perlu Revisi',
-  APPROVED_TECHNICAL = 'Disetujui Penyelenggara',
-  APPROVED_ADMIN = 'Disetujui Kasubag TU',
-  APPROVED_FINAL = 'Disetujui PPK',
+  APPROVED_TECHNICAL = 'Diverifikasi penyelenggara, Menunggu Persetujuan TU',
+  APPROVED_ADMIN = 'Disetujui TU, Menunggu Validasi PPK',
+  APPROVED_FINAL = 'Disetujui PPK, Dalam Proses Pengadaan',
   COMPLETED = 'Selesai'
 }
 

@@ -95,7 +95,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
         setSelectedRequest(null);
         setTuNote('');
         
-        setSuccessMessage("Berhasil dikirim! Dokumen disetujui TU.");
+        setSuccessMessage("Berhasil dikirim! Dokumen diteruskan ke PPK.");
         setShowSuccessToast(true);
         setTimeout(() => setShowSuccessToast(false), 3000);
       } catch (e) {
