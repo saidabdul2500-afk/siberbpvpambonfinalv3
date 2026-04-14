@@ -25,12 +25,12 @@ export enum VocationalCategory {
 
 export enum RequestStatus {
   DRAFT = 'Draft',
-  PENDING = 'Menunggu Verifikasi Teknis',
+  PENDING = 'Menunggu Verifikasi Penyelenggara',
   REVISION = 'Perlu Revisi',
-  APPROVED_TECHNICAL = 'Lolos Verifikasi Teknis (Penyelenggara)',
-  APPROVED_ADMIN = 'Lolos Verifikasi Administrasi (TU)',
-  APPROVED_FINAL = 'Dalam Proses Pengadaan',
-  COMPLETED = 'Selesai Pengadaan'
+  APPROVED_TECHNICAL = 'Disetujui Penyelenggara',
+  APPROVED_ADMIN = 'Disetujui Kasubag TU',
+  APPROVED_FINAL = 'Disetujui PPK',
+  COMPLETED = 'Selesai'
 }
 
 export enum UserRole {

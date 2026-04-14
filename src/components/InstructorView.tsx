@@ -643,7 +643,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                 <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Lampiran</th>
                 <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
                 <th className="px-6 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Catatan</th>
+                <th className="px-6 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Catatan</th>
                 <th className="px-6 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Aksi</th>
               </tr>
             </thead>
@@ -699,16 +699,18 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                     </div>
                   </td>
                   <td className="px-6 py-6">
-                    {(req.organizerComment || req.tuComment || req.ppkComment) ? (
-                      <button 
-                        onClick={() => openNoteModal(req)}
-                        className="text-[9px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-4 py-2 rounded-lg transition-all tracking-widest border border-amber-100 shadow-sm active:scale-95 whitespace-nowrap"
-                      >
-                        Lihat Catatan
-                      </button>
-                    ) : (
-                      <span className="text-xs font-bold text-slate-400">-</span>
-                    )}
+                    <div className="flex justify-center">
+                      {(req.organizerComment || req.tuComment || req.ppkComment) ? (
+                        <button 
+                          onClick={() => openNoteModal(req)}
+                          className="text-[9px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-4 py-2 rounded-lg transition-all tracking-widest border border-amber-100 shadow-sm active:scale-95 whitespace-nowrap"
+                        >
+                          Lihat Catatan
+                        </button>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-400"></span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-6 text-right">
                     <button 

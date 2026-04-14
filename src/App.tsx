@@ -27,6 +27,7 @@ const App: React.FC = () => {
       try {
         const response = await fetch('/api/users');
         const text = await response.text();
+        console.log('Raw data from Apps Script:', text.substring(0, 500));
         try {
           const data = JSON.parse(text);
           if (data.users && Array.isArray(data.users)) {
@@ -65,33 +66,65 @@ const App: React.FC = () => {
     try {
       const response = await fetch('/api/requests');
       const text = await response.text();
+      console.log('Raw requests data from Apps Script:', text.substring(0, 500));
       
       try {
         const data = JSON.parse(text);
         if (data && data.requests && Array.isArray(data.requests)) {
           // Map keys if they come from Indonesian headers
-          const mappedRequests = data.requests.map((req: any) => ({
-            id: req.id || req['ID Pengajuan'] || req.id_pengajuan,
-            instructorName: req.instructorName || req['Nama Instruktur'] || req.nama_instruktur,
-            trainingTitle: req.trainingTitle || req['Program Pelatihan'] || req.proglat || req.training_title,
-            vocation: req.vocation || req['Kejuruan'] || req.kejuruan,
-            proglat: req.proglat || req['Proglat'] || req.proglat,
-            dateSubmitted: req.dateSubmitted || req['Tanggal'] || req.tanggal,
-            status: req.status || req['Status'] || req.status,
-            notes: req.notes || req['Catatan'] || req.notes,
-            organizerComment: req.organizerComment || req['Catatan Penyelenggara'] || req.organizer_comment,
-            tuComment: req.tuComment || req['Catatan TU'] || req.tu_comment,
-            ppkComment: req.ppkComment || req['Catatan PPK'] || req.ppk_comment,
-            attachmentName: req.attachmentName || req['Nama Lampiran'] || req.attachment_name,
-            attachmentData: req.attachmentData || req['Data Lampiran'] || req.attachment_data,
-            signedDocumentName: req.signedDocumentName || req['Nama TTE'] || req.signed_document_name,
-            signedDocumentData: req.signedDocumentData || req['Data TTE'] || req.signed_document_data,
-            history: Array.isArray(req.history) ? req.history : (typeof req.history === 'string' ? JSON.parse(req.history) : []),
-            items: Array.isArray(req.items) ? req.items : [],
-            trainingType: req.trainingType || req['Jenis Pelatihan'] || req.training_type,
-            programPelatihan: req.programPelatihan || req['Program Pelatihan'] || req.program_pelatihan,
-            kejuruan: req.kejuruan || req['Kejuruan'] || req.kejuruan
-          }));
+          const mappedRequests = data.requests.map((req: any) => {
+            // Helper to get value by multiple possible header names
+            const getVal = (keys: string[]) => {
+              for (const key of keys) {
+                if (req[key] !== undefined && req[key] !== null) return req[key];
+              }
+              return undefined;
+            };
+
+            let status = getVal(['status', 'Status']);
+            const trainingType = getVal(['trainingType', 'Jenis Pelatihan', 'training_type']);
+
+            // Normalize status for old data strings
+            if (status === 'Menunggu Verifikasi Teknis') status = RequestStatus.PENDING;
+            if (status === 'Lolos Verifikasi Teknis (Penyelenggara)') status = RequestStatus.APPROVED_TECHNICAL;
+            if (status === 'Lolos Verifikasi Administrasi (TU)') status = RequestStatus.APPROVED_ADMIN;
+            if (status === 'Dalam Proses Pengadaan') status = RequestStatus.APPROVED_FINAL;
+            if (status === 'Selesai Pengadaan') status = RequestStatus.COMPLETED;
+
+            // Fix for potential column shift: if status looks like a training type, it's probably wrong
+            if (status === TrainingType.PBK || status === TrainingType.PBL) {
+              console.warn(`Detected column shift for request ${getVal(['id', 'ID Pengajuan'])}. Status was ${status}, resetting to PENDING.`);
+              status = RequestStatus.PENDING;
+            }
+
+            // If status is empty but it's a new request, default to PENDING
+            if (!status || status === '-') {
+              status = RequestStatus.PENDING;
+            }
+
+            return {
+              id: getVal(['id', 'ID Pengajuan', 'id_pengajuan']),
+              instructorName: getVal(['instructorName', 'Nama Instruktur', 'nama_instruktur']),
+              trainingTitle: getVal(['trainingTitle', 'Program Pelatihan', 'training_title']),
+              vocation: getVal(['vocation', 'Kejuruan', 'kejuruan']),
+              proglat: getVal(['proglat', 'Proglat']),
+              dateSubmitted: getVal(['dateSubmitted', 'Tanggal', 'tanggal']),
+              status: status,
+              notes: getVal(['notes', 'Catatan']),
+              organizerComment: getVal(['organizerComment', 'Catatan Penyelenggara', 'organizer_comment']),
+              tuComment: getVal(['tuComment', 'Catatan TU', 'tu_comment']),
+              ppkComment: getVal(['ppkComment', 'Catatan PPK', 'ppk_comment']),
+              attachmentName: getVal(['attachmentName', 'Nama Lampiran', 'attachment_name']),
+              attachmentData: getVal(['attachmentData', 'Data Lampiran', 'attachment_data', 'Lampiran']),
+              signedDocumentName: getVal(['signedDocumentName', 'Nama TTE', 'signed_document_name']),
+              signedDocumentData: getVal(['signedDocumentData', 'Data TTE', 'signed_document_data', 'TTE']),
+              history: Array.isArray(req.history) ? req.history : (typeof req.history === 'string' ? JSON.parse(req.history) : []),
+              items: Array.isArray(req.items) ? req.items : [],
+              trainingType: trainingType,
+              programPelatihan: getVal(['programPelatihan', 'Program Pelatihan', 'program_pelatihan']),
+              kejuruan: getVal(['kejuruan', 'Kejuruan'])
+            };
+          });
           
           // Only update if data has actually changed to avoid unnecessary re-renders
           setRequests(prev => {
