@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { MaterialRequest, RequestStatus, VOCATION_COLORS, MaterialItem, instructorNameMap, UserRole } from '../types';
+import { formatSafeDate, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
 
 interface OrganizerViewProps {
   requests: MaterialRequest[];
@@ -323,7 +324,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction }) => 
                             <td className="px-6 py-4 text-xs font-black text-slate-800 uppercase">{item.name}</td>
                             <td className="px-6 py-4 text-xs font-medium text-slate-500 italic">{item.spec}</td>
                             <td className="px-6 py-4 text-xs font-bold text-slate-600">{item.unit}</td>
-                            <td className="px-6 py-4 text-center text-xs font-black text-[#003399]">{item.quantity}</td>
+                            <td className="px-6 py-4 text-center text-xs font-black text-[#003399]">{formatSafeNumber(item.quantity)}</td>
                           </tr>
                         ))
                       )}
@@ -686,8 +687,8 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction }) => 
                     <div className="text-[10px] text-slate-400 font-medium">{req.proglat}</div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
-                    <div className="text-xs font-black text-slate-700">{new Date(req.dateSubmitted).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
-                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{new Date(req.dateSubmitted).getFullYear()}</div>
+                    <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-8 py-6">
                     <span className={`inline-block px-3 py-1 text-[9px] font-black rounded-xl uppercase tracking-widest border shadow-sm ${req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
@@ -766,8 +767,8 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction }) => 
                     </div>
                   </td>
                   <td className="px-8 py-8 whitespace-nowrap">
-                    <div className="text-xs font-black text-slate-700">{new Date(req.dateSubmitted).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
-                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{new Date(req.dateSubmitted).getFullYear()}</div>
+                    <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-8 py-8 text-center">
                     <div className="flex flex-col gap-2 items-center">

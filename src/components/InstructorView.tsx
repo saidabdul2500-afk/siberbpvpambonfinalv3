@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MaterialRequest, RequestStatus, VocationalCategory, VOCATION_COLORS, PROGLAT_MAPPING, User, TrainingType, PBK_PROGRAMS, PBL_PROGRAMS } from '../types';
+import { formatSafeDate, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
 
 interface InstructorViewProps {
   user: User;
@@ -109,29 +110,38 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
     });
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return alert("Silakan upload dokumen pengajuan (Excel/PDF) terlebih dahulu!");
 
-    onSubmit({
-      trainingTitle: programPelatihan,
-      vocation: kejuruan as VocationalCategory,
-      proglat: programPelatihan,
-      items: [],
-      attachmentName: file.name,
-      attachmentData: attachmentData || undefined,
-      instructorName: user.displayName,
-      status: RequestStatus.PENDING,
-      dateSubmitted: new Date().toISOString(),
-      trainingType,
-      programPelatihan,
-      kejuruan: kejuruan as VocationalCategory
-    });
-    
-    setFile(null);
-    setPreviewUrl(null);
-    setAttachmentData(null);
-    setShowForm(false);
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        trainingTitle: programPelatihan,
+        vocation: kejuruan as VocationalCategory,
+        proglat: programPelatihan,
+        items: [],
+        attachmentName: file.name,
+        attachmentData: attachmentData || undefined,
+        instructorName: user.displayName,
+        status: RequestStatus.PENDING,
+        dateSubmitted: new Date().toISOString(),
+        trainingType,
+        programPelatihan,
+        kejuruan: kejuruan as VocationalCategory
+      });
+      
+      setFile(null);
+      setPreviewUrl(null);
+      setAttachmentData(null);
+      setShowForm(false);
+    } catch (error) {
+      console.error('Submission failed:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const openDetailModal = (req: MaterialRequest) => {
@@ -181,7 +191,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                     {selectedRequestForDetail.attachmentName || 'Dokumen Pengajuan'}
                   </h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                    {selectedRequestForDetail.trainingTitle} • {new Date(selectedRequestForDetail.dateSubmitted).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {selectedRequestForDetail.trainingTitle} • {formatSafeDate(selectedRequestForDetail.dateSubmitted, { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
               </div>
@@ -275,7 +285,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                             <td className="px-8 py-5 text-sm font-bold text-slate-700">{item.name}</td>
                             <td className="px-8 py-5 text-xs text-slate-500 leading-relaxed">{item.spec || (item as any).specification}</td>
                             <td className="px-8 py-5 text-center text-xs font-bold text-slate-600 uppercase">{item.unit}</td>
-                            <td className="px-8 py-5 text-center text-sm font-black text-[#003399]">{item.quantity}</td>
+                            <td className="px-8 py-5 text-center text-sm font-black text-[#003399]">{formatSafeNumber(item.quantity)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -514,9 +524,22 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                 </span>
                 <button
                   type="submit"
-                  className="bg-[#003399] text-white px-14 py-5 rounded-2xl font-black uppercase tracking-[0.25em] text-xs shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center gap-3 hover:bg-[#0d47a1]"
+                  disabled={isSubmitting}
+                  className="bg-[#003399] text-white px-14 py-5 rounded-2xl font-black uppercase tracking-[0.25em] text-xs shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center gap-3 hover:bg-[#0d47a1] disabled:opacity-50"
                 >
-                  Kirim Pengajuan
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      MENGIRIM...
+                    </>
+                  ) : (
+                    <>
+                      Kirim Pengajuan
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -606,8 +629,8 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                     )}
                   </td>
                   <td className="px-6 py-6 whitespace-nowrap">
-                    <div className="text-xs font-black text-slate-700">{new Date(req.dateSubmitted).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
-                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{new Date(req.dateSubmitted).getFullYear()}</div>
+                    <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-6 py-6">
                     <span className={`inline-block px-3 py-1 text-[9px] font-black rounded-xl uppercase tracking-widest border shadow-sm whitespace-nowrap min-w-fit text-center ${

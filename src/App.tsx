@@ -18,6 +18,8 @@ const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Load users from Google Sheets
   useEffect(() => {
@@ -57,65 +59,102 @@ const App: React.FC = () => {
     fetchUsers();
   }, []);
 
-  // Auth persistence check
+
+  // Load data on mount and set up polling
+  const fetchRequests = async () => {
+    try {
+      const response = await fetch('/api/requests');
+      const text = await response.text();
+      
+      try {
+        const data = JSON.parse(text);
+        if (data.requests && Array.isArray(data.requests)) {
+          // Map keys if they come from Indonesian headers
+          const mappedRequests = data.requests.map((req: any) => ({
+            id: req.id || req['ID Pengajuan'] || req.id_pengajuan,
+            instructorName: req.instructorName || req['Nama Instruktur'] || req.nama_instruktur,
+            trainingTitle: req.trainingTitle || req['Program Pelatihan'] || req.proglat || req.training_title,
+            vocation: req.vocation || req['Kejuruan'] || req.kejuruan,
+            proglat: req.proglat || req['Proglat'] || req.proglat,
+            dateSubmitted: req.dateSubmitted || req['Tanggal'] || req.tanggal,
+            status: req.status || req['Status'] || req.status,
+            notes: req.notes || req['Catatan'] || req.notes,
+            organizerComment: req.organizerComment || req['Catatan Penyelenggara'] || req.organizer_comment,
+            tuComment: req.tuComment || req['Catatan TU'] || req.tu_comment,
+            ppkComment: req.ppkComment || req['Catatan PPK'] || req.ppk_comment,
+            attachmentName: req.attachmentName || req['Nama Lampiran'] || req.attachment_name,
+            signedDocumentName: req.signedDocumentName || req['Nama TTE'] || req.signed_document_name,
+            history: Array.isArray(req.history) ? req.history : (typeof req.history === 'string' ? JSON.parse(req.history) : []),
+            items: Array.isArray(req.items) ? req.items : [],
+            trainingType: req.trainingType || req['Jenis Pelatihan'] || req.training_type,
+            programPelatihan: req.programPelatihan || req['Program Pelatihan'] || req.program_pelatihan,
+            kejuruan: req.kejuruan || req['Kejuruan'] || req.kejuruan
+          }));
+          
+          // Only update if data has actually changed to avoid unnecessary re-renders
+          setRequests(prev => {
+            const isChanged = JSON.stringify(prev) !== JSON.stringify(mappedRequests);
+            return isChanged ? mappedRequests : prev;
+          });
+          setHasLoadedInitialData(true);
+          setSyncError(null);
+        }
+      } catch (e) {
+        console.error('Failed to parse requests JSON:', text.substring(0, 100));
+        setSyncError('Gagal memuat data dari Spreadsheet.');
+      }
+    } catch (error) {
+      console.error('Failed to fetch requests from Sheets:', error);
+      setSyncError('Koneksi ke Spreadsheet terputus.');
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchRequests();
+      
+      // Set up polling every 30 seconds
+      const interval = setInterval(fetchRequests, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [currentUser]);
+
+  // Auth persistence and cross-tab sync
   useEffect(() => {
     const savedUser = localStorage.getItem('simpro_user');
     if (savedUser) {
       setCurrentUser(JSON.parse(savedUser));
     }
-  }, []);
 
-  // Load data on mount from Google Sheets
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const response = await fetch('/api/requests');
-        const text = await response.text();
-        
-        try {
-          const data = JSON.parse(text);
-          if (data.requests && Array.isArray(data.requests)) {
-            // Map keys if they come from Indonesian headers
-            const mappedRequests = data.requests.map((req: any) => ({
-              id: req.id || req['ID Pengajuan'] || req.id_pengajuan,
-              instructorName: req.instructorName || req['Nama Instruktur'] || req.nama_instruktur,
-              trainingTitle: req.trainingTitle || req['Program Pelatihan'] || req.proglat || req.training_title,
-              vocation: req.vocation || req['Kejuruan'] || req.kejuruan,
-              proglat: req.proglat || req['Proglat'] || req.proglat,
-              dateSubmitted: req.dateSubmitted || req['Tanggal'] || req.tanggal,
-              status: req.status || req['Status'] || req.status,
-              notes: req.notes || req['Catatan'] || req.notes,
-              organizerComment: req.organizerComment || req['Catatan Penyelenggara'] || req.organizer_comment,
-              tuComment: req.tuComment || req['Catatan TU'] || req.tu_comment,
-              ppkComment: req.ppkComment || req['Catatan PPK'] || req.ppk_comment,
-              attachmentName: req.attachmentName || req['Nama Lampiran'] || req.attachment_name,
-              signedDocumentName: req.signedDocumentName || req['Nama TTE'] || req.signed_document_name,
-              history: Array.isArray(req.history) ? req.history : (typeof req.history === 'string' ? JSON.parse(req.history) : []),
-              items: Array.isArray(req.items) ? req.items : [],
-              trainingType: req.trainingType || req['Jenis Pelatihan'] || req.training_type,
-              programPelatihan: req.programPelatihan || req['Program Pelatihan'] || req.program_pelatihan,
-              kejuruan: req.kejuruan || req['Kejuruan'] || req.kejuruan
-            }));
-            setRequests(mappedRequests);
-          }
-        } catch (e) {
-          console.error('Failed to parse requests JSON:', text.substring(0, 100));
+    // Listen for changes in other tabs (login/logout)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'simpro_user') {
+        if (e.newValue) {
+          setCurrentUser(JSON.parse(e.newValue));
+        } else {
+          setCurrentUser(null);
         }
-      } catch (error) {
-        console.error('Failed to fetch requests from Sheets:', error);
       }
     };
-    fetchRequests();
-  }, [currentUser]);
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const saveRequests = (newReqs: MaterialRequest[]) => {
     setRequests(newReqs);
     // Trigger sync to Google Sheets
-    syncToGoogleSheets(newReqs);
+    if (hasLoadedInitialData) {
+      syncToGoogleSheets(newReqs);
+    } else {
+      console.warn('Sync skipped: Initial data not loaded yet.');
+      alert("Peringatan: Data belum sinkron dengan Spreadsheet. Silakan tunggu sebentar atau refresh halaman.");
+    }
   };
 
   const syncToGoogleSheets = async (data: MaterialRequest[]) => {
     setIsSyncing(true);
+    setSyncError(null);
     try {
       // Map instructor names and EXCLUDE large base64 data to avoid 413 Payload Too Large
       const mappedData = data.map(({ attachmentData, signedDocumentData, ...req }) => ({
@@ -142,17 +181,20 @@ const App: React.FC = () => {
       }
 
       if (!response.ok) {
-        console.warn('Sync failed:', result.error || result);
+        const errorMsg = result.error || 'Gagal sinkronisasi';
+        console.warn('Sync failed:', errorMsg);
+        setSyncError(errorMsg);
         
         // Handle 403 error specifically with a pop-up
-        if (response.status === 403 || (result.error && result.error.includes('403'))) {
+        if (response.status === 403 || (errorMsg && errorMsg.includes('403'))) {
           alert("Gagal Sinkronisasi (Akses Ditolak): Pastikan Anda sudah membagikan Spreadsheet ke email Service Account sebagai EDITOR.");
         }
       } else {
         console.log('Sync success:', result.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calling sync API:', error);
+      setSyncError(error.message || 'Kesalahan jaringan saat sinkronisasi');
     } finally {
       setIsSyncing(false);
     }
@@ -231,8 +273,42 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 selection:bg-blue-100 selection:text-[#003399]">
       {/* Header - Hidden on mobile */}
-      <div className="hidden md:block">
+      <div className="hidden md:block relative">
         <DashboardHeader user={currentUser} onLogout={handleLogout} />
+        
+        {/* Sync Status Indicator */}
+        <div className="absolute top-4 right-64 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur border border-slate-100 shadow-sm">
+          {isSyncing ? (
+            <>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Sinkronisasi...</span>
+            </>
+          ) : syncError ? (
+            <>
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span className="text-[9px] font-black text-red-600 uppercase tracking-widest truncate max-w-[150px]" title={syncError}>Error Sync</span>
+              <button 
+                onClick={() => syncToGoogleSheets(requests)}
+                className="ml-1 p-1 hover:bg-red-50 rounded-md text-red-600"
+                title="Coba Lagi"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+              <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Terhubung</span>
+              <button 
+                onClick={fetchRequests}
+                className="ml-1 p-1 hover:bg-emerald-50 rounded-md text-emerald-600 transition-colors"
+                title="Refresh Data"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              </button>
+            </>
+          )}
+        </div>
       </div>
       
       {/* Mobile Top Branding - Only visible on small screens when on profile */}
@@ -243,7 +319,12 @@ const App: React.FC = () => {
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
         <div className="max-w-5xl mx-auto">
-          {activeTab === 'home' ? (
+          {!hasLoadedInitialData ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-12 h-12 border-4 border-blue-100 border-t-[#003399] rounded-full animate-spin"></div>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Memuat Data Sistem...</p>
+            </div>
+          ) : activeTab === 'home' ? (
             currentUser.role === UserRole.INSTRUCTOR ? (
               <InstructorView 
                 user={currentUser}

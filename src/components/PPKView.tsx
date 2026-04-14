@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { MaterialRequest, RequestStatus, VOCATION_COLORS, User, UserRole, instructorNameMap } from '../types';
+import { formatSafeDate, getSafeYear } from '../lib/dateUtils';
 import PDFPreview from './PDFPreview';
 
 interface PPKViewProps {
@@ -310,8 +311,8 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                     <div className="text-[10px] text-slate-400 font-medium">{req.proglat}</div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
-                    <div className="text-xs font-black text-slate-700">{new Date(req.dateSubmitted).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
-                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{new Date(req.dateSubmitted).getFullYear()}</div>
+                    <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-8 py-6">
                     <span className="inline-block px-3 py-1 text-[9px] font-black rounded-xl uppercase tracking-widest border shadow-sm bg-purple-50 text-purple-700 border-purple-200">
@@ -381,8 +382,8 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                       <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Instruktur</div>
                     </td>
                     <td className="px-8 py-6 whitespace-nowrap">
-                      <div className="text-xs font-black text-slate-700">{new Date(req.dateSubmitted).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
-                      <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{new Date(req.dateSubmitted).getFullYear()}</div>
+                      <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
+                      <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                     </td>
                     <td className="px-8 py-6">
                       <span className="inline-block px-3 py-1 text-[9px] font-black rounded-xl uppercase tracking-widest border shadow-sm bg-emerald-50 text-emerald-700 border-emerald-100">
