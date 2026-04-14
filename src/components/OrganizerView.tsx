@@ -161,6 +161,9 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction }) => 
     
     try {
       const base64 = await readFileAsBase64(uploadedDoc);
+      if (base64.length > 48000) {
+        alert("Peringatan: Ukuran file TTE cukup besar. Google Sheets memiliki batas 50.000 karakter per sel. Jika file tidak muncul di pratinjau nantinya, silakan kompres PDF Anda.");
+      }
       onAction(selectedRequestId, RequestStatus.APPROVED_TECHNICAL, undefined, uploadedDoc.name, base64);
       
       // Reset and close all modals

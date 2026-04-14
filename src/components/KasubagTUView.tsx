@@ -84,6 +84,9 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
     if (selectedRequest && uploadedDoc && isVerified) {
       try {
         const base64 = await readFileAsBase64(uploadedDoc);
+        if (base64.length > 48000) {
+          alert("Peringatan: Ukuran file TTE cukup besar. Google Sheets memiliki batas 50.000 karakter per sel. Jika file tidak muncul di pratinjau nantinya, silakan kompres PDF Anda.");
+        }
         onAction(selectedRequest.id, RequestStatus.APPROVED_ADMIN, tuNote, uploadedDoc.name, base64);
         setIsTTEModalOpen(false);
         setIsDetailModalOpen(false);

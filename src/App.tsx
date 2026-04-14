@@ -83,7 +83,9 @@ const App: React.FC = () => {
             tuComment: req.tuComment || req['Catatan TU'] || req.tu_comment,
             ppkComment: req.ppkComment || req['Catatan PPK'] || req.ppk_comment,
             attachmentName: req.attachmentName || req['Nama Lampiran'] || req.attachment_name,
+            attachmentData: req.attachmentData || req['Data Lampiran'] || req.attachment_data,
             signedDocumentName: req.signedDocumentName || req['Nama TTE'] || req.signed_document_name,
+            signedDocumentData: req.signedDocumentData || req['Data TTE'] || req.signed_document_data,
             history: Array.isArray(req.history) ? req.history : (typeof req.history === 'string' ? JSON.parse(req.history) : []),
             items: Array.isArray(req.items) ? req.items : [],
             trainingType: req.trainingType || req['Jenis Pelatihan'] || req.training_type,
@@ -164,8 +166,8 @@ const App: React.FC = () => {
     setIsSyncing(true);
     setSyncError(null);
     try {
-      // Map instructor names and EXCLUDE large base64 data to avoid 413 Payload Too Large
-      const mappedData = data.map(({ attachmentData, signedDocumentData, ...req }) => ({
+      // Map instructor names
+      const mappedData = data.map((req) => ({
         ...req,
         instructorName: instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName
       }));

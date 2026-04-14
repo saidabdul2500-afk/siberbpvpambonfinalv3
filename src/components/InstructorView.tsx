@@ -78,6 +78,9 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
 
     try {
       const base64 = await readFileAsBase64(selectedFile);
+      if (base64.length > 48000) {
+        alert("Peringatan: Ukuran file PDF cukup besar. Google Sheets memiliki batas 50.000 karakter per sel. Jika file tidak muncul di pratinjau nantinya, silakan kompres PDF Anda atau gunakan file yang lebih kecil.");
+      }
       setAttachmentData(base64);
     } catch (error) {
       console.error("File processing failed:", error);
