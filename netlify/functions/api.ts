@@ -10,10 +10,20 @@ export const handler: Handler = async (event, context) => {
     };
   }
 
-  // Handle GET for fetching users
+  // Handle GET for fetching users or requests
   if (event.httpMethod === 'GET') {
+    const action = event.path.split('/').pop();
+    
     try {
-      const response = await fetch(`${scriptUrl}?action=getUsers`);
+      let response;
+      if (action === 'users') {
+        response = await fetch(`${scriptUrl}?action=getUsers`);
+      } else if (action === 'requests') {
+        response = await fetch(`${scriptUrl}?action=getRequests`);
+      } else {
+        return { statusCode: 400, body: JSON.stringify({ error: 'Invalid action' }) };
+      }
+
       const data = await response.json();
       return {
         statusCode: 200,

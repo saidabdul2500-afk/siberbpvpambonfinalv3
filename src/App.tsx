@@ -45,28 +45,26 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Load data on mount
+  // Load data on mount from Google Sheets
   useEffect(() => {
-    // One-time clear as requested by user to "start fresh"
-    const hasCleared = localStorage.getItem('simpro_cleared_v1');
-    if (!hasCleared) {
-      setRequests([]);
-      localStorage.setItem('simpro_requests', JSON.stringify([]));
-      localStorage.setItem('simpro_cleared_v1', 'true');
-    } else {
-      const saved = localStorage.getItem('simpro_requests');
-      if (saved) {
-        setRequests(JSON.parse(saved));
-      } else {
-        setRequests([]);
-        localStorage.setItem('simpro_requests', JSON.stringify([]));
+    const fetchRequests = async () => {
+      try {
+        const response = await fetch('/api/requests');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.requests && Array.isArray(data.requests)) {
+            setRequests(data.requests);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch requests from Sheets:', error);
       }
-    }
-  }, []);
+    };
+    fetchRequests();
+  }, [currentUser]);
 
   const saveRequests = (newReqs: MaterialRequest[]) => {
     setRequests(newReqs);
-    localStorage.setItem('simpro_requests', JSON.stringify(newReqs));
     // Trigger sync to Google Sheets
     syncToGoogleSheets(newReqs);
   };
