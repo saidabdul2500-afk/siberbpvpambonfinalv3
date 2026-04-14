@@ -224,14 +224,10 @@ const App: React.FC = () => {
       }
 
       if (!response.ok) {
-        const errorMsg = result.error || 'Gagal sinkronisasi';
+        const errorMsg = result.error || 'Gagal sinkronisasi ke Spreadsheet';
         console.warn('Sync failed:', errorMsg);
         setSyncError(errorMsg);
-        
-        // Handle 403 error specifically with a pop-up
-        if (response.status === 403 || (errorMsg && errorMsg.includes('403'))) {
-          alert("Gagal Sinkronisasi (Akses Ditolak): Pastikan Anda sudah membagikan Spreadsheet ke email Service Account sebagai EDITOR.");
-        }
+        alert(`Gagal Menyimpan ke Spreadsheet: ${errorMsg}. Data mungkin akan hilang saat halaman direfresh.`);
       } else {
         console.log('Sync success:', result.message);
       }
@@ -250,6 +246,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setRequests([]); // Clear data on logout to avoid confusion
     localStorage.removeItem('simpro_user');
     setActiveTab('home');
   };
