@@ -100,8 +100,8 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
           </div>
           <div>
-            <p className="font-black uppercase text-xs tracking-widest">Berhasil!</p>
-            <p className="text-sm font-bold">Usulan Bahan Telah Disetujui untuk Diproses</p>
+            <p className="font-black uppercase text-xs tracking-widest">Berhasil dikirim!</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Usulan Bahan Telah Disetujui</p>
           </div>
         </div>
       )}
@@ -311,7 +311,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                 <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nama Instruktur</th>
                 <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Program Pelatihan</th>
                 <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
                 <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Catatan Final</th>
                 <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Aksi</th>
               </tr>
@@ -346,9 +346,11 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                     <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-8 py-6">
-                    <span className="inline-block px-3 py-1 text-[9px] font-black rounded-xl uppercase tracking-widest border shadow-sm bg-purple-50 text-purple-700 border-purple-200">
-                      {req.status}
-                    </span>
+                    <div className="flex justify-center">
+                      <span className="inline-block px-3 py-1.5 text-[9px] font-semibold rounded-xl uppercase tracking-widest border shadow-sm bg-purple-50 text-purple-700 border-purple-200 min-w-[150px] text-center">
+                        {req.status}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-8 py-6">
                     <div className="max-w-[150px] truncate text-[10px] font-bold text-slate-500 italic" title={req.tuComment}>
@@ -386,7 +388,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Unit Pelatihan</th>
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Posisi Berkas</th>
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
-                  <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status Terakhir</th>
+                  <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status Terakhir</th>
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Catatan</th>
                   <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Dokumen</th>
                 </tr>
@@ -417,9 +419,11 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                       <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                     </td>
                     <td className="px-8 py-6">
-                      <span className="inline-block px-3 py-1 text-[9px] font-black rounded-xl uppercase tracking-widest border shadow-sm bg-emerald-50 text-emerald-700 border-emerald-100">
-                        {req.status}
-                      </span>
+                      <div className="flex justify-center">
+                        <span className="inline-block px-3 py-1.5 text-[9px] font-semibold rounded-xl uppercase tracking-widest border shadow-sm bg-emerald-50 text-emerald-700 border-emerald-100 min-w-[150px] text-center">
+                          {req.status}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="max-w-[200px] text-[10px] font-bold text-slate-500 italic leading-relaxed">

@@ -31,6 +31,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
   const [selectedRequestForNote, setSelectedRequestForNote] = useState<MaterialRequest | null>(null);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [detailBlobUrl, setDetailBlobUrl] = useState<string | null>(null);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // Body Scroll Lock
   useEffect(() => {
@@ -149,6 +150,8 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
       setPreviewUrl(null);
       setAttachmentData(null);
       setShowForm(false);
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
     } catch (error) {
       console.error('Submission failed:', error);
     } finally {
@@ -632,7 +635,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                 <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kelas & Program</th>
                 <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Lampiran</th>
                 <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
-                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                <th className="px-6 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
                 <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Catatan</th>
                 <th className="px-6 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Aksi</th>
               </tr>
@@ -675,16 +678,18 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                     <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-6 py-6">
-                    <span className={`inline-block px-3 py-1 text-[9px] font-black rounded-xl uppercase tracking-widest border shadow-sm whitespace-nowrap min-w-fit text-center ${
-                      req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-700 border-green-200' :
-                      req.status === RequestStatus.PENDING ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                      req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-700 border-red-200' :
-                      req.status === RequestStatus.APPROVED_TECHNICAL ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                      req.status === RequestStatus.APPROVED_ADMIN ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                      'bg-slate-50 text-slate-700 border-slate-200'
-                    }`}>
-                      {req.status}
-                    </span>
+                    <div className="flex justify-center">
+                      <span className={`inline-block px-3 py-1.5 text-[9px] font-semibold rounded-xl uppercase tracking-widest border shadow-sm whitespace-nowrap min-w-[150px] text-center ${
+                        req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-700 border-green-200' :
+                        req.status === RequestStatus.PENDING ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-700 border-red-200' :
+                        req.status === RequestStatus.APPROVED_TECHNICAL ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        req.status === RequestStatus.APPROVED_ADMIN ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                        'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}>
+                        {req.status}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-6 py-6">
                     {(req.organizerComment || req.tuComment || req.ppkComment) ? (
@@ -712,6 +717,17 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
           </table>
         </div>
       </div>
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] animate-bounce">
+          <div className="bg-emerald-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border-2 border-emerald-400">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-sm font-black uppercase tracking-widest">Berhasil dikirim!</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -15,8 +15,8 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ data }) => {
       return;
     }
     
-    // Check if data is a URL
-    if (data.startsWith('http://') || data.startsWith('https://')) {
+    // Check if data is a URL (including blob URLs)
+    if (data.startsWith('http://') || data.startsWith('https://') || data.startsWith('blob:')) {
       setBlobUrl(data);
       setError(null);
       return;
@@ -66,7 +66,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ data }) => {
         <button 
           onClick={() => {
             const link = document.createElement('a');
-            link.href = `data:application/pdf;base64,${data}`;
+            link.href = (data.startsWith('http') || data.startsWith('blob:')) ? data : `data:application/pdf;base64,${data}`;
             link.download = 'dokumen.pdf';
             link.click();
           }}

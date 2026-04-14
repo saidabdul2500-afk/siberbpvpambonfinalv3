@@ -25,6 +25,8 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const tuRequests = requests.filter(r => r.status === RequestStatus.APPROVED_TECHNICAL);
   const tuArchive = requests.filter(r => 
@@ -92,7 +94,10 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
         setIsDetailModalOpen(false);
         setSelectedRequest(null);
         setTuNote('');
-        alert("Dokumen TTE Berhasil Diverifikasi & Disetujui!");
+        
+        setSuccessMessage("Berhasil dikirim! Dokumen disetujui TU.");
+        setShowSuccessToast(true);
+        setTimeout(() => setShowSuccessToast(false), 3000);
       } catch (e) {
         console.error(e);
         alert("Gagal memproses dokumen.");
@@ -147,6 +152,10 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
     setIsDetailModalOpen(false);
     setSelectedRequest(null);
     setRevisionNote('');
+    
+    setSuccessMessage("Revisi berhasil dikirim ke Penyelenggara.");
+    setShowSuccessToast(true);
+    setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
   return (
@@ -466,7 +475,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                 <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nama Instruktur</th>
                 <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Program Pelatihan</th>
                 <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
                 <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Catatan</th>
                 <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Aksi</th>
               </tr>
@@ -501,9 +510,11 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-8 py-6">
-                    <span className="inline-block px-3 py-1 text-[9px] font-black rounded-xl uppercase tracking-widest border shadow-sm bg-blue-50 text-blue-700 border-blue-200">
-                      {req.status}
-                    </span>
+                    <div className="flex justify-center">
+                      <span className="inline-block px-3 py-1.5 text-[9px] font-semibold rounded-xl uppercase tracking-widest border shadow-sm bg-blue-50 text-blue-700 border-blue-200 min-w-[150px] text-center">
+                        {req.status}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-8 py-6">
                     <div className="max-w-[150px] truncate text-[10px] font-bold text-slate-500 italic" title={req.organizerComment}>
@@ -541,7 +552,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Unit Pelatihan</th>
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Posisi Berkas</th>
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
-                  <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status Terakhir</th>
+                  <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status Terakhir</th>
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Catatan</th>
                   <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Dokumen</th>
                 </tr>
@@ -572,11 +583,13 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                       <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                     </td>
                     <td className="px-8 py-6">
-                      <span className={`inline-block px-3 py-1 text-[9px] font-black rounded-xl uppercase tracking-widest border shadow-sm ${
-                        req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                      }`}>
-                        {req.status}
-                      </span>
+                      <div className="flex justify-center">
+                        <span className={`inline-block px-3 py-1.5 text-[9px] font-semibold rounded-xl uppercase tracking-widest border shadow-sm min-w-[150px] text-center ${
+                          req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        }`}>
+                          {req.status}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="max-w-[200px] text-[10px] font-bold text-slate-500 italic leading-relaxed">
@@ -598,6 +611,17 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
           </div>
         </div>
       </div>
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] animate-bounce">
+          <div className="bg-emerald-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border-2 border-emerald-400">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-sm font-black uppercase tracking-widest">{successMessage}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -48,6 +48,8 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
   const [revisionNote, setRevisionNote] = useState('');
   const [isTTEModalOpen, setIsTTEModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [selectedRequestForNote, setSelectedRequestForNote] = useState<MaterialRequest | null>(null);
 
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -279,7 +281,9 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
       setPreviewUrl(null);
       setIsVerified(false);
       
-      alert("Dokumen bertanda tangan berhasil diunggah. Pengajuan diteruskan ke TU.");
+      setSuccessMessage("Berhasil dikirim! Dokumen diteruskan ke TU.");
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
     } catch (e) {
       console.error(e);
       alert("Gagal memproses dokumen. Silakan coba lagi.");
@@ -296,6 +300,10 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
     setIsApprovalModalOpen(false);
     setSelectedRequestId(null);
     setRevisionNote('');
+    
+    setSuccessMessage("Revisi berhasil dikirim ke Instruktur.");
+    setShowSuccessToast(true);
+    setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
   const readFileAsBase64 = (file: File): Promise<string> => {
@@ -405,7 +413,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                 <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Instruktur</th>
                 <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Program</th>
                 <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tanggal</th>
-                <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Aksi</th>
               </tr>
             </thead>
@@ -444,11 +452,13 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                     <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className={`px-3 py-1 text-[9px] font-black rounded-full uppercase tracking-widest border ${
-                      req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-600 border-amber-100'
-                    }`}>
-                      {req.status}
-                    </span>
+                    <div className="flex justify-center">
+                      <span className={`px-3 py-1.5 text-[9px] font-semibold rounded-full uppercase tracking-widest border min-w-[150px] text-center ${
+                        req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-600 border-amber-100'
+                      }`}>
+                        {req.status}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-6 py-5 text-right">
                     <button 
@@ -489,7 +499,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Unit Pelatihan</th>
               <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Posisi</th>
               <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tanggal</th>
-              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+              <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
               <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Berkas</th>
             </tr>
           </thead>
@@ -519,22 +529,35 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                   <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
                 </td>
                 <td className="px-8 py-6">
-                  <span className={`px-3 py-1 text-[9px] font-black rounded-full uppercase tracking-widest border ${
-                    req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-600 border-green-100' : 'bg-slate-50 text-slate-600 border-slate-100'
-                  }`}>
-                    {req.status}
-                  </span>
+                  <div className="flex justify-center">
+                    <span className={`px-3 py-1.5 text-[9px] font-semibold rounded-full uppercase tracking-widest border min-w-[150px] text-center ${
+                      req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-600 border-green-100' : 'bg-slate-50 text-slate-600 border-slate-100'
+                    }`}>
+                      {req.status}
+                    </span>
+                  </div>
                 </td>
                 <td className="px-8 py-6 text-right">
-                  {req.attachmentData && (
-                    <button 
-                      onClick={() => openPdfInNewTab(req.attachmentData!)}
-                      className="text-[10px] font-black uppercase text-[#001F54] hover:text-white bg-blue-50 hover:bg-[#001F54] px-4 py-2 rounded-xl transition-all tracking-widest border border-blue-100 flex items-center gap-2 ml-auto"
-                    >
-                      <FileText size={12} />
-                      Lihat Dokumen
-                    </button>
-                  )}
+                  <div className="flex flex-col gap-2 items-end">
+                    {req.attachmentData && (
+                      <button 
+                        onClick={() => openPdfInNewTab(req.attachmentData!)}
+                        className="text-[9px] font-black uppercase text-[#001F54] hover:text-white bg-blue-50 hover:bg-[#001F54] px-4 py-2 rounded-xl transition-all tracking-widest border border-blue-100 flex items-center gap-2"
+                      >
+                        <FileText size={12} />
+                        Usulan
+                      </button>
+                    )}
+                    {req.signedDocumentData && (
+                      <button 
+                        onClick={() => openPdfInNewTab(req.signedDocumentData!)}
+                        className="text-[9px] font-black uppercase text-emerald-700 hover:text-white bg-emerald-50 hover:bg-emerald-600 px-4 py-2 rounded-xl transition-all tracking-widest border border-emerald-100 flex items-center gap-2"
+                      >
+                        <CheckCircle2 size={12} />
+                        TTE
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -627,8 +650,8 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
       {/* TTE Upload Modal */}
       {isTTEModalOpen && selectedRequestId && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden">
-            <div className="p-8">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="p-8 overflow-y-auto custom-scrollbar">
               <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase">Upload Dokumen TTE</h3>
               <p className="text-slate-500 text-sm mb-6 italic">Unggah berkas PDF yang telah ditandatangani secara elektronik.</p>
               
@@ -646,6 +669,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                         <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                       </div>
                       <p className="text-sm font-black text-slate-800">{uploadedDoc.name}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Klik untuk mengganti berkas</p>
                     </div>
                   ) : (
                     <>
@@ -667,7 +691,16 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                 </div>
               )}
 
-              <div className="flex gap-3">
+              {uploadedDoc && previewUrl && (
+                <div className="mt-8 pt-8 border-t border-slate-100">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Live Preview & Verifikasi Data</h4>
+                  <div className="border-2 border-slate-100 rounded-[2rem] overflow-hidden bg-slate-50 h-[500px] relative">
+                    <PDFPreview data={previewUrl} />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-8">
                 <button onClick={() => setIsTTEModalOpen(false)} className="flex-1 px-6 py-4 rounded-2xl text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50">Batal</button>
                 <button 
                   onClick={handleConfirmForward} 
@@ -916,6 +949,15 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
 
       {/* Modals - Moved outside main layout for better stacking */}
       {renderModals()}
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] animate-bounce">
+          <div className="bg-emerald-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border-2 border-emerald-400">
+            <CheckCircle2 className="w-6 h-6" />
+            <span className="text-sm font-black uppercase tracking-widest">{successMessage}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
