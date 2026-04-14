@@ -648,8 +648,8 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                   <div className="space-y-4">
                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pratinjau Dokumen</h4>
                     <div className="border-2 border-slate-100 rounded-[2rem] overflow-hidden bg-slate-50 h-[400px] relative">
-                      {previewUrl ? (
-                        <PDFPreview data={previewUrl} />
+                      {previewData ? (
+                        <PDFPreview data={previewData} fileName={requests.find(r => r.id === selectedRequestId)?.attachmentName} />
                       ) : (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center">
                           <AlertCircle size={48} className="mb-4 opacity-20" />
@@ -819,7 +819,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                 </button>
               </div>
               <div className="border-2 border-slate-100 rounded-[2rem] overflow-hidden h-[500px] bg-slate-50">
-                {previewData ? <PDFPreview data={previewData} /> : <div className="h-full flex items-center justify-center text-slate-400 font-black uppercase tracking-widest">Pratinjau Tidak Tersedia</div>}
+                {previewData ? <PDFPreview data={previewData} fileName={previewFileName} /> : <div className="h-full flex items-center justify-center text-slate-400 font-black uppercase tracking-widest">Pratinjau Tidak Tersedia</div>}
               </div>
               <div className="mt-8 flex justify-end">
                 <button onClick={() => setIsPreviewModalOpen(false)} className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-xs">Tutup Preview</button>

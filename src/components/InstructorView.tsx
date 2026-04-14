@@ -281,7 +281,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                 
                 <div className="border-2 border-slate-100 rounded-[2rem] bg-slate-50 shadow-inner h-[600px] relative group overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300">
                   {(selectedRequestForDetail.signedDocumentData || selectedRequestForDetail.attachmentData) ? (
-                    <PDFPreview data={selectedRequestForDetail.signedDocumentData || selectedRequestForDetail.attachmentData!} />
+                    <PDFPreview data={selectedRequestForDetail.signedDocumentData || selectedRequestForDetail.attachmentData!} fileName={selectedRequestForDetail.signedDocumentName || selectedRequestForDetail.attachmentName} />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-6 bg-slate-50 p-8 text-center">
                       <div className="bg-slate-100 p-6 rounded-full">

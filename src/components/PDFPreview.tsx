@@ -2,17 +2,24 @@ import React, { useEffect, useState } from 'react';
 
 interface PDFPreviewProps {
   data: string;
+  fileName?: string;
 }
 
-const PDFPreview: React.FC<PDFPreviewProps> = ({ data }) => {
+const PDFPreview: React.FC<PDFPreviewProps> = ({ data, fileName }) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const isExcel = fileName?.toLowerCase().endsWith('.xlsx') || fileName?.toLowerCase().endsWith('.xls');
 
   useEffect(() => {
     if (!data) {
       setBlobUrl(null);
       setError(null);
       return;
+    }
+
+    if (isExcel) {
+      return; // Do not create blob url for excel
     }
     
     // Check if data is a URL (including blob URLs)
@@ -66,6 +73,36 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ data }) => {
       setError(err instanceof Error ? err.message : 'Gagal memproses data PDF');
     }
   }, [data]);
+
+  if (isExcel) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-4 p-8 text-center bg-slate-50">
+        <div className="bg-green-50 p-4 rounded-2xl mb-2">
+          <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <p className="text-xs font-black uppercase tracking-widest text-green-600">File Excel</p>
+        <p className="text-[10px] italic max-w-xs leading-relaxed">
+          Pratinjau langsung tidak tersedia untuk file Excel. Silakan unduh file untuk melihat isinya.
+        </p>
+        <button 
+          onClick={() => {
+            const link = document.createElement('a');
+            const mimeType = fileName?.toLowerCase().endsWith('.xlsx') 
+              ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+              : 'application/vnd.ms-excel';
+            link.href = (data.startsWith('http') || data.startsWith('blob:')) ? data : `data:${mimeType};base64,${data}`;
+            link.download = fileName || 'dokumen.xlsx';
+            link.click();
+          }}
+          className="mt-4 bg-green-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-200"
+        >
+          Unduh File Excel
+        </button>
+      </div>
+    );
+  }
 
   if (error) {
     return (
