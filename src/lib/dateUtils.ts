@@ -1,5 +1,16 @@
 
 /**
+ * Safely formats a date string to a localized date and time.
+ * Returns a fallback string if the date is invalid.
+ */
+export const formatSafeDateTime = (dateStr: string | undefined | null): string => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+};
+
+/**
  * Safely formats a date string to a localized date.
  * Returns a fallback string if the date is invalid.
  */

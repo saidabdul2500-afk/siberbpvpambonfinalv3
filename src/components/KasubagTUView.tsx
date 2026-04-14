@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { MaterialRequest, RequestStatus, VOCATION_COLORS, User, UserRole, HistoryLog, instructorNameMap } from '../types';
-import { formatSafeDate, getSafeYear } from '../lib/dateUtils';
+import { formatSafeDateTime, getSafeYear } from '../lib/dateUtils';
 import PDFPreview from './PDFPreview';
 
 interface KasubagTUViewProps {
@@ -111,7 +111,13 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
       return;
     }
     try {
-      const byteCharacters = atob(data);
+      let base64Data = data;
+      if (base64Data.includes(',')) {
+        base64Data = base64Data.split(',')[1];
+      }
+      base64Data = base64Data.replace(/\s/g, '');
+      
+      const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -174,10 +180,10 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase truncate max-w-md">
-                    Verifikasi Administrasi: {selectedRequest.attachmentName || 'Dokumen'}
+                    Verifikasi: {selectedRequest.trainingTitle}
                   </h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                    {instructorNameMap[(selectedRequest.instructorName || '').toUpperCase()] || selectedRequest.instructorName} • {selectedRequest.trainingTitle}
+                    {instructorNameMap[(selectedRequest.instructorName || '').toUpperCase()] || selectedRequest.instructorName}
                   </p>
                 </div>
               </div>
@@ -187,49 +193,61 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-              {/* Technical Notes Toggle */}
-              <div className="space-y-4">
-                <button 
-                  onClick={() => setShowTechnicalNotes(!showTechnicalNotes)}
-                  className="flex items-center gap-2 text-[10px] font-black text-[#003399] uppercase tracking-widest bg-blue-50 px-6 py-3 rounded-xl hover:bg-blue-100 transition-all"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                  {showTechnicalNotes ? 'Sembunyikan Catatan Teknis' : 'Lihat Catatan Teknis (Penyelenggara)'}
-                </button>
-
-                {showTechnicalNotes && (
-                  <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 animate-in slide-in-from-top-2 duration-300">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Riwayat Verifikasi Teknis</h4>
-                    <div className="space-y-4">
-                      {selectedRequest.history?.filter(h => h.role === UserRole.ADMIN).map((log, i) => (
-                        <div key={i} className="flex gap-4">
-                          <div className="w-1 h-auto bg-blue-200 rounded-full"></div>
-                          <div>
-                            <p className="text-xs font-black text-slate-700 uppercase">{log.action}</p>
-                            <p className="text-[10px] text-slate-400 font-bold">{new Date(log.date).toLocaleString('id-ID')}</p>
-                            {log.comment && <p className="mt-2 text-sm text-slate-600 italic">"{log.comment}"</p>}
-                          </div>
-                        </div>
-                      ))}
-                      {(!selectedRequest.history || selectedRequest.history.filter(h => h.role === UserRole.ADMIN).length === 0) && (
-                        <p className="text-xs text-slate-400 italic">Belum ada catatan riwayat teknis.</p>
-                      )}
-                    </div>
-                  </div>
-                )}
+              {/* Program Pelatihan */}
+              <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Program Pelatihan</h4>
+                <div className="text-sm font-black text-slate-900">
+                  {selectedRequest.trainingTitle}
+                </div>
               </div>
+
+              {/* Technical Notes Toggle */}
+              {!isArchiveView && (
+                <div className="space-y-4">
+                  <button 
+                    onClick={() => setShowTechnicalNotes(!showTechnicalNotes)}
+                    className="flex items-center gap-2 text-[10px] font-black text-[#003399] uppercase tracking-widest bg-blue-50 px-6 py-3 rounded-xl hover:bg-blue-100 transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                    {showTechnicalNotes ? 'Sembunyikan Catatan Teknis' : 'Lihat Catatan Teknis (Penyelenggara)'}
+                  </button>
+
+                  {showTechnicalNotes && (
+                    <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 animate-in slide-in-from-top-2 duration-300">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Riwayat Verifikasi Teknis</h4>
+                      <div className="space-y-4">
+                        {selectedRequest.history?.filter(h => h.role === UserRole.ADMIN).map((log, i) => (
+                          <div key={i} className="flex gap-4">
+                            <div className="w-1 h-auto bg-blue-200 rounded-full"></div>
+                            <div>
+                              <p className="text-xs font-black text-slate-700 uppercase">{log.action}</p>
+                              <p className="text-[10px] text-slate-400 font-bold">{new Date(log.date).toLocaleString('id-ID')}</p>
+                              {log.comment && <p className="mt-2 text-sm text-slate-600 italic">"{log.comment}"</p>}
+                            </div>
+                          </div>
+                        ))}
+                        {(!selectedRequest.history || selectedRequest.history.filter(h => h.role === UserRole.ADMIN).length === 0) && (
+                          <p className="text-xs text-slate-400 italic">Belum ada catatan riwayat teknis.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Catatan Administrasi Input */}
-              <div className="bg-blue-50/30 rounded-3xl p-6 border border-blue-100 space-y-4">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Catatan Administrasi (Opsional untuk Setuju)</h4>
-                <textarea
-                  rows={3}
-                  value={tuNote}
-                  onChange={(e) => setTuNote(e.target.value)}
-                  placeholder="Tambahkan catatan administratif jika diperlukan..."
-                  className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-100 focus:border-[#003399] transition-all resize-none"
-                />
-              </div>
+              {!isArchiveView && (
+                <div className="bg-blue-50/30 rounded-3xl p-6 border border-blue-100 space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Catatan Administrasi (Opsional untuk Setuju)</h4>
+                  <textarea
+                    rows={3}
+                    value={tuNote}
+                    onChange={(e) => setTuNote(e.target.value)}
+                    placeholder="Tambahkan catatan administratif jika diperlukan..."
+                    className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-100 focus:border-[#003399] transition-all resize-none"
+                  />
+                </div>
+              )}
 
               {/* Live Preview */}
               <div className="space-y-4">
@@ -506,8 +524,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     <div className="text-[10px] text-slate-400 font-medium">{req.proglat}</div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
-                    <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
-                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
+                    <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex justify-center">
@@ -549,7 +566,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
             <table className="min-w-[900px] w-full table-auto divide-y divide-slate-100">
               <thead className="bg-slate-50/30">
                 <tr>
-                  <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Unit Pelatihan</th>
+                  <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Program Pelatihan</th>
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Posisi Berkas</th>
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
                   <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status Terakhir</th>
@@ -579,8 +596,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                       <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Instruktur</div>
                     </td>
                     <td className="px-8 py-6 whitespace-nowrap">
-                      <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
-                      <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
+                      <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex justify-center">

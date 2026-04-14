@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { MaterialRequest, RequestStatus, VOCATION_COLORS, User, UserRole, instructorNameMap } from '../types';
-import { formatSafeDate, getSafeYear } from '../lib/dateUtils';
+import { formatSafeDate, formatSafeDateTime, getSafeYear } from '../lib/dateUtils';
 import PDFPreview from './PDFPreview';
 
 interface PPKViewProps {
@@ -76,7 +76,13 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
       return;
     }
     try {
-      const byteCharacters = atob(data);
+      let base64Data = data;
+      if (base64Data.includes(',')) {
+        base64Data = base64Data.split(',')[1];
+      }
+      base64Data = base64Data.replace(/\s/g, '');
+      
+      const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -176,6 +182,14 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                        ))}
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Program Pelatihan */}
+              <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Program Pelatihan</h4>
+                <div className="text-sm font-black text-slate-900">
+                  {selectedRequest.trainingTitle}
                 </div>
               </div>
 
@@ -342,8 +356,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                     <div className="text-[10px] text-slate-400 font-medium">{req.proglat}</div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
-                    <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
-                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
+                    <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex justify-center">
@@ -385,7 +398,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
             <table className="min-w-[900px] w-full table-auto divide-y divide-slate-100">
               <thead className="bg-slate-50/30">
                 <tr>
-                  <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Unit Pelatihan</th>
+                  <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Program Pelatihan</th>
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Posisi Berkas</th>
                   <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
                   <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status Terakhir</th>
@@ -415,8 +428,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                       <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Instruktur</div>
                     </td>
                     <td className="px-8 py-6 whitespace-nowrap">
-                      <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
-                      <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
+                      <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex justify-center">

@@ -30,6 +30,7 @@ export enum RequestStatus {
   APPROVED_TECHNICAL = 'Diverifikasi penyelenggara, Menunggu Persetujuan TU',
   APPROVED_ADMIN = 'Disetujui TU, Menunggu Validasi PPK',
   APPROVED_FINAL = 'Disetujui PPK, Dalam Proses Pengadaan',
+  BAHAN_TIBA = 'BAHAN TERSEDIA / SUDAH TIBA',
   COMPLETED = 'Selesai'
 }
 
@@ -49,31 +50,28 @@ export interface User {
 }
 
 export const MOCK_USERS: User[] = [
-  // Administrative Roles
-  { username: 'admin', password: 'admin123', role: UserRole.ADMIN, displayName: 'Administrator Penyelenggara' },
-  { username: 'tu', password: '123', role: UserRole.KASUBAG_TU, displayName: 'Kasubag TU' },
-  { username: 'ppk', password: '123', role: UserRole.PPK, displayName: 'Pejabat Pembuat Komitmen (PPK)' },
-  
-  // Instructors (31 Users)
+  { username: 'admin', password: 'admin123', role: UserRole.ADMIN, displayName: 'Ferdinandus Rianto Sampe, S.T.' },
+  { username: 'tu', password: '123', role: UserRole.KASUBAG_TU, displayName: 'Elfinus David Nanlohy, S.T.' },
+  { username: 'ppk', password: '123', role: UserRole.PPK, displayName: 'A. Albian Misuari, S.Psi.' },
   { username: 'fence', password: 'Fn8!26Ab', role: UserRole.INSTRUCTOR, displayName: 'Fence Manuputty, A.Md.', vocation: VocationalCategory.MANUFAKTUR },
-  { username: 'ongen', password: 'Og3#26Xc', role: UserRole.INSTRUCTOR, displayName: 'Ongen Petrason Latuharhary, A.Md', vocation: VocationalCategory.REFRIGERASI },
-  { username: 'alice', password: 'Al9*26Zd', role: UserRole.INSTRUCTOR, displayName: 'Alice Amanda Kuhurima, S.T.', vocation: VocationalCategory.LISTRIK },
+  { username: 'ongen', password: 'Og3#26Xc', role: UserRole.INSTRUCTOR, displayName: 'Ongen Petrason Latuharhary, A.Md.', vocation: VocationalCategory.REFRIGERASI },
+  { username: 'alice', password: 'Al9*26Zd', role: UserRole.INSTRUCTOR, displayName: 'Alice Amanda Kuhurima, St..', vocation: VocationalCategory.LISTRIK },
   { username: 'barry', password: 'Br2@26Vf', role: UserRole.INSTRUCTOR, displayName: 'Barry V. L. Silooy, A.Md.', vocation: VocationalCategory.BANGUNAN },
-  { username: 'glein', password: 'Gl5%26Bg', role: UserRole.INSTRUCTOR, displayName: 'Glein Korneles Leuhery, S.Tr.M.P.K.', vocation: VocationalCategory.BANGUNAN },
-  { username: 'james', password: 'Jm7^26Nh', role: UserRole.INSTRUCTOR, displayName: 'James Anderson Sohilait, S.Tr.M.P.K.', vocation: VocationalCategory.BANGUNAN },
+  { username: 'glein', password: 'Gl5%26Bg', role: UserRole.INSTRUCTOR, displayName: 'Glein Korneles Leuhery,  S.Tr.M.P.K.', vocation: VocationalCategory.BANGUNAN },
+  { username: 'james', password: 'Jm7^26Nh', role: UserRole.INSTRUCTOR, displayName: 'James Anderson Sohilait,  S.Tr.M.P.K.', vocation: VocationalCategory.BANGUNAN },
   { username: 'cembrist', password: 'Cb4$26Mj', role: UserRole.INSTRUCTOR, displayName: 'Cembrist Kailola, A.Md.', vocation: VocationalCategory.LISTRIK },
   { username: 'rio', password: 'Ro6&26Kk', role: UserRole.INSTRUCTOR, displayName: 'Muhammad Rio Wicaksono, S.E.', vocation: VocationalCategory.PARIWISATA },
   { username: 'hazlyarta', password: 'Hz1+26Ll', role: UserRole.INSTRUCTOR, displayName: 'Hazlyarta Manullang, S.Pd.', vocation: VocationalCategory.GARMEN },
   { username: 'yansi', password: 'Yn8-26Pp', role: UserRole.INSTRUCTOR, displayName: 'Yansi Lolo Tasik, S.Pd.', vocation: VocationalCategory.OTOMOTIF },
   { username: 'papang', password: 'Pp3=26Oo', role: UserRole.INSTRUCTOR, displayName: 'Papang Zaen Nizhar, S.T.', vocation: VocationalCategory.LAS },
-  { username: 'farhan', password: 'Fh9?26Ii', role: UserRole.INSTRUCTOR, displayName: 'Farhan Machfudz Ismed, S.T.', vocation: VocationalCategory.TIK },
+  { username: 'farhan', password: 'Fh9?26Ii', role: UserRole.INSTRUCTOR, displayName: 'Farhan Machfudz Ismed, St..', vocation: VocationalCategory.TIK },
   { username: 'iswahyudi', password: 'Is2!26Uu', role: UserRole.INSTRUCTOR, displayName: 'Iswahyudi Rusli, S.T.', vocation: VocationalCategory.OTOMOTIF },
   { username: 'fredo', password: 'Fr5@26Yy', role: UserRole.INSTRUCTOR, displayName: 'Fredo Sekeroney, A.Md.', vocation: VocationalCategory.ELEKTRONIKA },
   { username: 'janah', password: 'Jn7#26Tt', role: UserRole.INSTRUCTOR, displayName: 'Siti Nurjanah, S.Kom.', vocation: VocationalCategory.TIK },
   { username: 'dian', password: 'Dn4*26Rr', role: UserRole.INSTRUCTOR, displayName: 'Dian Lestari Pertiwi Purba, S.Pd.', vocation: VocationalCategory.ELEKTRONIKA },
   { username: 'david', password: 'Dv6%26Ee', role: UserRole.INSTRUCTOR, displayName: 'David Tua Samosir, S.T.', vocation: VocationalCategory.LISTRIK },
   { username: 'joseph', password: 'Js1^26Ww', role: UserRole.INSTRUCTOR, displayName: 'Joseph Andar P.C.H. Sihombing,Sst.Par.', vocation: VocationalCategory.PARIWISATA },
-  { username: 'richad', password: 'Rc8$26Qq', role: UserRole.INSTRUCTOR, displayName: 'Richad Rivanto David, S.Kom..', vocation: VocationalCategory.TIK },
+  { username: 'richad', password: 'Rc8$26Qq', role: UserRole.INSTRUCTOR, displayName: 'Richad Rivanto David, S.Kom.', vocation: VocationalCategory.TIK },
   { username: 'bastian', password: 'Bt3&26Ss', role: UserRole.INSTRUCTOR, displayName: 'Bastian Wijaya Nababan, S.T.', vocation: VocationalCategory.LAS },
   { username: 'wira', password: 'Wira9+26Dd', role: UserRole.INSTRUCTOR, displayName: 'Wira Perdana, S.St.', vocation: VocationalCategory.TIK },
   { username: 'leling', password: 'Ll2-26Ff', role: UserRole.INSTRUCTOR, displayName: 'Leling Inriyani Ch. Dimu Heo, S.Tr.Par.', vocation: VocationalCategory.BISNIS_MANAJEMEN },
@@ -82,10 +80,9 @@ export const MOCK_USERS: User[] = [
   { username: 'minarto', password: 'Mn4!26Jj', role: UserRole.INSTRUCTOR, displayName: 'Minarto, S.Kom.', vocation: VocationalCategory.TIK },
   { username: 'raty', password: 'Rt6@26Kk', role: UserRole.INSTRUCTOR, displayName: 'Raty Ester Juita Siregar, S.Pd.', vocation: VocationalCategory.GARMEN },
   { username: 'anggit', password: 'Ag1#26Mm', role: UserRole.INSTRUCTOR, displayName: 'Anggit Dwi Prasetya, S.T.', vocation: VocationalCategory.OTOMOTIF },
-  { username: 'usman', password: 'Us8*26Nn', role: UserRole.INSTRUCTOR, displayName: 'Usman Latuiconsina, S.T.', vocation: VocationalCategory.LAS },
+  { username: 'usman', password: 'Us8*26Nn', role: UserRole.INSTRUCTOR, displayName: 'Usman Latuiconsina, St', vocation: VocationalCategory.LAS },
   { username: 'hanny', password: 'Hy3%26Bb', role: UserRole.INSTRUCTOR, displayName: 'Hanny Erlani, S.Pd.', vocation: VocationalCategory.GARMEN },
-  { username: 'said', password: 'Sd9^26Vv', role: UserRole.INSTRUCTOR, displayName: 'Abdul Said Bolota, S.Pd.', vocation: VocationalCategory.BANGUNAN },
-  { username: 'mulyadi', password: 'Mu1#26Xx', role: UserRole.INSTRUCTOR, displayName: 'Mulyadi', vocation: VocationalCategory.BANGUNAN }
+  { username: 'said', password: 'Sd9^26Vv', role: UserRole.INSTRUCTOR, displayName: 'Abdul Said Bolota, S.Pd.', vocation: VocationalCategory.BANGUNAN }
 ];
 
 export interface HistoryLog {

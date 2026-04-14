@@ -395,6 +395,7 @@ const App: React.FC = () => {
                 user={currentUser}
                 requests={getPersonalData()}
                 onSubmit={handleInstructorSubmit}
+                onLogout={handleLogout}
               />
             ) : currentUser.role === UserRole.ADMIN ? (
               <OrganizerView 
@@ -441,9 +442,8 @@ const App: React.FC = () => {
               
               <div className="flex flex-col items-center md:items-end gap-3">
                  <div className="flex gap-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                    <span className="hover:text-[#003399] cursor-pointer transition-colors">Bantuan</span>
+                    <span className="hover:text-[#003399] cursor-pointer transition-colors">Ganti Password</span>
                     <span className="hover:text-[#003399] cursor-pointer transition-colors">Panduan Sistem</span>
-                    <span className="hover:text-[#003399] cursor-pointer transition-colors">Kebijakan Privasi</span>
                  </div>
                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">© 2026 SIBER BPVP AMBON - Direktorat Jenderal Binalavotas</p>
               </div>

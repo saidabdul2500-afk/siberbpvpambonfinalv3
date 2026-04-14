@@ -3,15 +3,23 @@ import React, { useState, useEffect } from 'react';
 import { MaterialRequest, RequestStatus, VocationalCategory, VOCATION_COLORS, PROGLAT_MAPPING, User, TrainingType, PBK_PROGRAMS, PBL_PROGRAMS } from '../types';
 import { formatSafeDate, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
 import PDFPreview from './PDFPreview';
+import InstructorManual from './InstructorManual';
+import { motion, AnimatePresence } from 'motion/react';
+import { FileText, BookOpen, Settings, LogOut, Menu, ChevronLeft } from 'lucide-react';
+import SiberLogo from './SiberLogo';
 
 interface InstructorViewProps {
   user: User;
   requests: MaterialRequest[];
   onSubmit: (req: Partial<MaterialRequest>) => void;
+  onLogout: () => void;
 }
 
-const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmit }) => {
+const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmit, onLogout }) => {
+  const [activeMenu, setActiveMenu] = useState<'pengajuan' | 'panduan' | 'settings'>('pengajuan');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [trainingType, setTrainingType] = useState<TrainingType>(TrainingType.PBK);
   const [kejuruan, setKejuruan] = useState<string>('');
   const [programPelatihan, setProgramPelatihan] = useState('');
@@ -57,7 +65,13 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
       }
 
       try {
-        const binary = atob(data);
+        let base64Data = data;
+        if (base64Data.includes(',')) {
+          base64Data = base64Data.split(',')[1];
+        }
+        base64Data = base64Data.replace(/\s/g, '');
+        
+        const binary = atob(base64Data);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) {
           bytes[i] = binary.charCodeAt(i);
@@ -189,7 +203,13 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
 
   const openPdfInNewTab = (base64Data: string) => {
     try {
-      const byteCharacters = atob(base64Data);
+      let sanitizedBase64 = base64Data;
+      if (sanitizedBase64.includes(',')) {
+        sanitizedBase64 = sanitizedBase64.split(',')[1];
+      }
+      sanitizedBase64 = sanitizedBase64.replace(/\s/g, '');
+      
+      const byteCharacters = atob(sanitizedBase64);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -418,24 +438,34 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
         </div>
       )}
 
+      {isManualModalOpen && <InstructorManual onClose={() => setIsManualModalOpen(false)} />}
+
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">INSTRUKTUR</h2>
           <p className="text-slate-500 text-sm">Hanya menampilkan data pengajuan milik <b>{user.displayName}</b>.</p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-[#003399] hover:bg-[#0d47a1] text-white px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-blue-100 active:scale-95"
-        >
-          {showForm ? 'Tutup Form' : (
-            <>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-              </svg>
-              Buat Pengajuan
-            </>
-          )}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsManualModalOpen(true)}
+            className="bg-white hover:bg-slate-50 text-[#003399] px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all border border-[#003399] shadow-sm active:scale-95"
+          >
+            Panduan Sistem
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-[#003399] hover:bg-[#0d47a1] text-white px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-blue-100 active:scale-95"
+          >
+            {showForm ? 'Tutup Form' : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                Buat Pengajuan
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -676,6 +706,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                   <td className="px-6 py-6">
                     <div className="flex justify-center">
                       <span className={`inline-block px-3 py-1.5 text-[9px] font-semibold rounded-xl uppercase tracking-widest border shadow-sm whitespace-nowrap min-w-[150px] text-center ${
+                        req.status === RequestStatus.BAHAN_TIBA ? 'bg-green-800 text-white border-green-900' :
                         req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-700 border-green-200' :
                         req.status === RequestStatus.PENDING ? 'bg-amber-50 text-amber-700 border-amber-200' :
                         req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-700 border-red-200' :

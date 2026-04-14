@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
-import { MaterialRequest, RequestStatus, VOCATION_COLORS, MaterialItem, instructorNameMap, UserRole } from '../types';
-import { formatSafeDate, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
+import { MaterialRequest, RequestStatus, VOCATION_COLORS, MaterialItem, instructorNameMap, UserRole, MOCK_USERS } from '../types';
+import { formatSafeDateTime, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
 import PDFPreview from './PDFPreview';
 import SiberLogo from './SiberLogo';
 import { 
@@ -31,7 +31,7 @@ interface OrganizerViewProps {
 }
 
 const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLogout }) => {
-  const [activeMenu, setActiveMenu] = useState<'dashboard' | 'validation' | 'archive' | 'recap' | 'settings'>('validation');
+  const [activeMenu, setActiveMenu] = useState<'dashboard' | 'validation' | 'archive' | 'users' | 'settings'>('validation');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [vocationFilter, setVocationFilter] = useState<string>('all');
@@ -172,7 +172,13 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
         url = data;
       } else {
         try {
-          const byteCharacters = atob(data);
+          let base64Data = data;
+          if (base64Data.includes(',')) {
+            base64Data = base64Data.split(',')[1];
+          }
+          base64Data = base64Data.replace(/\s/g, '');
+          
+          const byteCharacters = atob(base64Data);
           const byteNumbers = new Array(byteCharacters.length);
           for (let i = 0; i < byteCharacters.length; i++) {
             byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -205,7 +211,13 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
       return;
     }
     try {
-      const byteCharacters = atob(data);
+      let base64Data = data;
+      if (base64Data.includes(',')) {
+        base64Data = base64Data.split(',')[1];
+      }
+      base64Data = base64Data.replace(/\s/g, '');
+      
+      const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -382,19 +394,6 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold outline-none focus:border-[#001F54] transition-all"
           />
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Filter className="text-slate-400" size={18} />
-          <select 
-            value={vocationFilter}
-            onChange={(e) => setVocationFilter(e.target.value)}
-            className="flex-1 md:flex-none bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:border-[#001F54] transition-all"
-          >
-            <option value="all">Semua Kejuruan</option>
-            {Object.keys(VOCATION_COLORS).map(v => (
-              <option key={v} value={v}>{v}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
       <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
@@ -449,7 +448,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                     <div className="text-[10px] text-slate-400 font-medium">{req.proglat}</div>
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
-                    <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
+                    <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex justify-center">
@@ -496,7 +495,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
         <table className="w-full table-auto divide-y divide-slate-100">
           <thead className="bg-slate-50/50">
             <tr>
-              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Unit Pelatihan</th>
+              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Program Pelatihan</th>
               <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Posisi</th>
               <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tanggal</th>
               <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
@@ -526,15 +525,29 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                   </div>
                 </td>
                 <td className="px-8 py-6 whitespace-nowrap">
-                  <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
+                  <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
                 </td>
                 <td className="px-8 py-6">
-                  <div className="flex justify-center">
+                  <div className="flex justify-center flex-col items-center gap-2">
                     <span className={`px-3 py-1.5 text-[9px] font-semibold rounded-full uppercase tracking-widest border min-w-[150px] text-center ${
+                      req.status === RequestStatus.BAHAN_TIBA ? 'bg-green-800 text-white border-green-900' :
                       req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-600 border-green-100' : 'bg-slate-50 text-slate-600 border-slate-100'
                     }`}>
                       {req.status}
                     </span>
+                    {req.status === RequestStatus.APPROVED_FINAL && (
+                      <button 
+                        onClick={() => {
+                          if (confirm(`Apakah bahan untuk ${req.trainingTitle} benar-benar sudah tiba di gudang/workshop?`)) {
+                            const now = new Date().toLocaleString('id-ID');
+                            onAction(req.id, RequestStatus.BAHAN_TIBA, `Diterima oleh Penyelenggara pada ${now}`);
+                          }
+                        }}
+                        className="text-[9px] font-black uppercase text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-full transition-all tracking-widest shadow-sm active:scale-95"
+                      >
+                        📦 Konfirmasi Tiba
+                      </button>
+                    )}
                   </div>
                 </td>
                 <td className="px-8 py-6 text-right">
@@ -559,6 +572,36 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                     )}
                   </div>
                 </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderUsers = () => (
+    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
+      <div className="p-8 border-b border-slate-100">
+        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Daftar Pengguna</h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full table-auto divide-y divide-slate-100">
+          <thead className="bg-slate-50/50">
+            <tr>
+              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Username</th>
+              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</th>
+              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama Lengkap</th>
+              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {MOCK_USERS.map((user, i) => (
+              <tr key={i} className="hover:bg-slate-50 transition-colors">
+                <td className="px-8 py-6 text-sm font-bold text-slate-700">{user.username}</td>
+                <td className="px-8 py-6 text-sm font-mono text-slate-500">{user.password}</td>
+                <td className="px-8 py-6 text-sm font-bold text-slate-800">{user.displayName}</td>
+                <td className="px-8 py-6 text-xs font-bold text-slate-600 uppercase">{user.role}</td>
               </tr>
             ))}
           </tbody>
@@ -596,14 +639,9 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">
                   <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Daftar Barang Usulan</h4>
-                    <div className="space-y-3">
-                      {requests.find(r => r.id === selectedRequestId)?.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100">
-                          <span className="text-xs font-bold text-slate-700">{item.name}</span>
-                          <span className="text-xs font-black text-[#001F54]">{item.quantity} {item.unit}</span>
-                        </div>
-                      ))}
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Program Pelatihan</h4>
+                    <div className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                      {requests.find(r => r.id === selectedRequestId)?.trainingTitle}
                     </div>
                   </div>
                   
@@ -624,7 +662,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
 
                 <div className="space-y-6">
                   <div className="bg-blue-50 rounded-3xl p-6 border border-blue-100">
-                    <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Aksi Verifikasi</h4>
+                    <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4 text-center">Aksi Verifikasi</h4>
                     <div className="space-y-4">
                       <button 
                         onClick={handleOpenTTE}
@@ -837,8 +875,8 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
             { id: 'dashboard', label: 'Dashboard Utama', icon: LayoutDashboard },
             { id: 'validation', label: 'Validasi Usulan', icon: ClipboardCheck },
             { id: 'archive', label: 'Arsip & Riwayat', icon: Archive },
-            { id: 'recap', label: 'Rekapitulasi Data', icon: BarChart3 },
-            { id: 'settings', label: 'Pengaturan', icon: Settings },
+            { id: 'users', label: 'User', icon: UserIcon },
+            { id: 'settings', label: 'Ganti Password', icon: Settings },
           ].map((item) => (
             <button
               key={item.id}
@@ -897,8 +935,8 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               {activeMenu === 'dashboard' && 'Dashboard Utama'}
               {activeMenu === 'validation' && 'Validasi Usulan'}
               {activeMenu === 'archive' && 'Arsip & Riwayat'}
-              {activeMenu === 'recap' && 'Rekapitulasi Data'}
-              {activeMenu === 'settings' && 'Pengaturan'}
+              {activeMenu === 'users' && 'Daftar Pengguna'}
+              {activeMenu === 'settings' && 'Ganti Password'}
             </h2>
             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
               Selamat Datang, Administrator Penyelenggara
@@ -930,16 +968,11 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               {activeMenu === 'dashboard' && renderDashboard()}
               {activeMenu === 'validation' && renderValidation()}
               {activeMenu === 'archive' && renderArchive()}
-              {activeMenu === 'recap' && (
-                <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
-                  <BarChart3 size={64} className="mx-auto text-slate-200 mb-6" />
-                  <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">Fitur Rekapitulasi Sedang Dikembangkan</h3>
-                </div>
-              )}
+              {activeMenu === 'users' && renderUsers()}
               {activeMenu === 'settings' && (
                 <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
                   <Settings size={64} className="mx-auto text-slate-200 mb-6" />
-                  <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">Fitur Pengaturan Sedang Dikembangkan</h3>
+                  <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">Fitur Ganti Password Sedang Dikembangkan</h3>
                 </div>
               )}
             </motion.div>

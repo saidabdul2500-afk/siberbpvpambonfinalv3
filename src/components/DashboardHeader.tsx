@@ -26,9 +26,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ user, onLogout }) => 
           <div className="flex items-center gap-6">
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-sm font-black text-white">{user.displayName}</span>
-              {(user.role === UserRole.ADMIN || user.role === UserRole.INSTRUCTOR) && (
+              {(user.role === UserRole.ADMIN || user.role === UserRole.INSTRUCTOR || user.role === UserRole.KASUBAG_TU || user.role === UserRole.PPK) && (
                 <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">
-                  {user.role === UserRole.ADMIN ? 'Penyelenggara (Admin)' : `Instruktur ${user.vocation}`}
+                  {user.role === UserRole.ADMIN ? 'Penyelenggara (Admin)' : 
+                   user.role === UserRole.INSTRUCTOR ? `Instruktur ${user.vocation}` :
+                   user.role === UserRole.KASUBAG_TU ? 'Kasubag TU' : 'Pejabat Pembuat Komitmen'}
                 </span>
               )}
             </div>

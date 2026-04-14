@@ -39,7 +39,14 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ data }) => {
         throw new Error("Data file tidak valid atau terlalu kecil.");
       }
 
-      const byteCharacters = atob(data);
+      // Robust base64 decoding
+      let base64Data = data;
+      if (base64Data.includes(',')) {
+        base64Data = base64Data.split(',')[1];
+      }
+      base64Data = base64Data.replace(/\s/g, '');
+      
+      const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
