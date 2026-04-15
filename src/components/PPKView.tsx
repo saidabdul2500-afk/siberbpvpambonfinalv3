@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { MaterialRequest, RequestStatus, VOCATION_COLORS, User, UserRole, instructorNameMap } from '../types';
 import { formatSafeDate, formatSafeDateTime, getSafeYear } from '../lib/dateUtils';
 import PDFPreview from './PDFPreview';
+import PPKManual from './PPKManual';
+import { ChevronLeft } from 'lucide-react';
 
 interface PPKViewProps {
   user: User;
@@ -18,16 +20,22 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
   const [revisionNote, setRevisionNote] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [isArchiveView, setIsArchiveView] = useState(false);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [selectedRequestForNote, setSelectedRequestForNote] = useState<MaterialRequest | null>(null);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
   const ppkRequests = requests.filter(r => r.status === RequestStatus.APPROVED_ADMIN);
   const ppkArchive = requests.filter(r => 
     r.status === RequestStatus.APPROVED_FINAL || 
-    r.status === RequestStatus.COMPLETED
+    r.status === RequestStatus.COMPLETED ||
+    (r.status === RequestStatus.REVISION && (r.history?.some(h => h.role === UserRole.PPK) || r.ppkComment)) ||
+    (r.status === RequestStatus.REVISION_TO_ORGANIZER && (r.history?.some(h => h.role === UserRole.PPK) || r.ppkComment)) ||
+    (r.status === RequestStatus.REVISION_FROM_PPK)
   );
 
   // Body Scroll Lock for Modals
   React.useEffect(() => {
-    if (isReviewModalOpen || isRevisionModalOpen) {
+    if (isReviewModalOpen || isRevisionModalOpen || isNoteModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -35,7 +43,12 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isReviewModalOpen, isRevisionModalOpen]);
+  }, [isReviewModalOpen, isRevisionModalOpen, isNoteModalOpen]);
+
+  const openNoteModal = (req: MaterialRequest) => {
+    setSelectedRequestForNote(req);
+    setIsNoteModalOpen(true);
+  };
 
   const handleOpenReview = (req: MaterialRequest, isArchive: boolean = false) => {
     setSelectedRequest(req);
@@ -52,7 +65,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
       alert("Catatan revisi wajib diisi!");
       return;
     }
-    onAction(selectedRequest.id, RequestStatus.REVISION, revisionNote);
+    onAction(selectedRequest.id, RequestStatus.REVISION_FROM_PPK, revisionNote);
     setIsRevisionModalOpen(false);
     setIsReviewModalOpen(false);
     setSelectedRequest(null);
@@ -100,6 +113,122 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Success Notification */}
+      {isManualModalOpen ? (
+        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="flex items-center justify-between border-b-2 border-slate-200 pb-6">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Panduan Sistem PPK</h2>
+              <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">Langkah-langkah persetujuan final</p>
+            </div>
+            <button
+              onClick={() => setIsManualModalOpen(false)}
+              className="flex items-center gap-2 text-slate-500 hover:text-[#003399] transition-colors font-black uppercase text-xs tracking-widest bg-white px-6 py-3 rounded-xl border border-slate-200 shadow-sm active:scale-95"
+            >
+              <ChevronLeft size={20} />
+              Kembali
+            </button>
+          </div>
+          <PPKManual />
+        </div>
+      ) : (
+        <>
+          {/* Note History Modal */}
+      {isNoteModalOpen && selectedRequestForNote && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Riwayat Catatan</h3>
+                <button onClick={() => setIsNoteModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {(() => {
+                  const primary = selectedRequestForNote.organizerComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.ADMIN && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-2xl">
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Penyelenggara (Teknis)</p>
+                      <p className="text-sm text-slate-700 font-bold italic">"{comment}"</p>
+                    </div>
+                  );
+                })()}
+
+                {(() => {
+                  const primary = selectedRequestForNote.tuComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.KASUBAG_TU && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-2xl">
+                      <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Kasubag TU (Administrasi)</p>
+                      <p className="text-sm text-slate-700 font-bold italic">"{comment}"</p>
+                    </div>
+                  );
+                })()}
+
+                {(() => {
+                  const primary = selectedRequestForNote.ppkComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.PPK && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-2xl">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">PPK (Final)</p>
+                      <p className="text-sm text-slate-700 font-bold italic">"{comment}"</p>
+                    </div>
+                  );
+                })()}
+
+                {(selectedRequestForNote.notes && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && selectedRequestForNote.notes !== '-') && (
+                  <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl">
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Catatan Instruktur</p>
+                    <p className="text-sm text-slate-700 font-bold italic">"{selectedRequestForNote.notes}"</p>
+                  </div>
+                )}
+
+                {/* Activity Log Section */}
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Log Aktivitas Catatan</p>
+                  <div className="space-y-3">
+                    {selectedRequestForNote.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
+                      <div key={i} className="flex gap-3 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div className="w-2 h-2 rounded-full bg-blue-400 mt-1 flex-shrink-0" />
+                        <div>
+                          <p className="font-black text-slate-700 uppercase text-[9px] mb-1">{h.role}</p>
+                          <p className="font-bold text-slate-600 italic">"{h.comment}"</p>
+                          <p className="text-[9px] text-slate-400 mt-1">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(!selectedRequestForNote.history || selectedRequestForNote.history.filter(h => h.comment && h.comment !== '-').length === 0) && (
+                      <p className="text-[10px] text-slate-400 italic text-center py-2">Tidak ada log aktivitas.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setIsNoteModalOpen(false)}
+                className="w-full mt-8 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-800 transition-all active:scale-95"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSuccess && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[150] bg-emerald-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-top-10 duration-500">
           <div className="bg-white/20 p-2 rounded-xl">
@@ -267,7 +396,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                     className="bg-[#003399] hover:bg-[#0d47a1] text-white px-10 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center gap-3"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Konfirmasi & Setujui Final
+                    KONFIRMASI & SETUJUI FINAL
                   </button>
                 </>
               )}
@@ -292,7 +421,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
               />
               <div className="flex gap-3">
                 <button onClick={() => setIsRevisionModalOpen(false)} className="flex-1 px-6 py-4 rounded-2xl text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50">Batal</button>
-                <button onClick={handleConfirmRevision} className="flex-[2] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all active:scale-95">Kirim Pengembalian</button>
+                <button onClick={handleConfirmRevision} className="flex-[2] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all active:scale-95">Kirim Revisi</button>
               </div>
             </div>
           </div>
@@ -304,14 +433,22 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
           <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">PPK</h2>
           <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">Persetujuan Final & Eksekusi Pengadaan</p>
         </div>
-        <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="text-right">
-            <span className="text-3xl font-black text-emerald-600 leading-none">{ppkRequests.length}</span>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Siap Disetujui</p>
-          </div>
-          <div className="h-10 w-px bg-slate-100"></div>
-          <div className="bg-emerald-50 p-2 rounded-xl">
-             <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setIsManualModalOpen(true)}
+            className="bg-white hover:bg-slate-50 text-[#003399] px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all border border-[#003399] shadow-sm active:scale-95 h-fit mb-1"
+          >
+            Panduan Sistem
+          </button>
+          <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+            <div className="text-right">
+              <span className="text-3xl font-black text-emerald-600 leading-none">{ppkRequests.length}</span>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Siap Disetujui</p>
+            </div>
+            <div className="h-10 w-px bg-slate-100"></div>
+            <div className="bg-emerald-50 p-2 rounded-xl">
+               <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            </div>
           </div>
         </div>
       </div>
@@ -352,8 +489,8 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                     </span>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="text-xs font-bold text-slate-700">{req.trainingTitle || req.programPelatihan || '-'}</div>
-                    <div className="text-[10px] text-slate-400 font-medium">{req.proglat || req.trainingType || '-'}</div>
+                    <div className="text-xs font-bold text-slate-700">{(req.trainingTitle && req.trainingTitle !== '-') ? req.trainingTitle : (req.proglat || req.programPelatihan || '-')}</div>
+                    <div className="text-[10px] text-slate-400 font-medium">{(req.trainingTitle && req.trainingTitle !== '-' && req.proglat && req.proglat !== req.trainingTitle) ? req.proglat : (req.trainingType || '-')}</div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
                     <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
@@ -376,7 +513,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                       onClick={() => handleOpenReview(req)}
                       className="text-[10px] font-black uppercase text-emerald-600 hover:text-white bg-emerald-50 hover:bg-emerald-600 px-6 py-3 rounded-xl transition-all tracking-[0.15em] border border-emerald-100 shadow-sm active:scale-95"
                     >
-                      Review & Setujui
+                      REVIEW & SETUJUI
                     </button>
                   </td>
                 </tr>
@@ -417,7 +554,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                 ) : ppkArchive.map((req) => (
                   <tr key={req.id} className="hover:bg-slate-50/30 transition-colors">
                     <td className="px-8 py-6">
-                      <div className="text-xs font-black text-slate-800 uppercase tracking-tight">{req.trainingTitle || req.programPelatihan || '-'}</div>
+                      <div className="text-xs font-black text-slate-800 uppercase tracking-tight">{(req.trainingTitle && req.trainingTitle !== '-') ? req.trainingTitle : (req.proglat || req.programPelatihan || '-')}</div>
                       <span className={`text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase border mt-1 inline-block ${VOCATION_COLORS[req.vocation || req.kejuruan] || 'bg-slate-100'}`}>
                         {req.vocation || req.kejuruan || '-'}
                       </span>
@@ -434,14 +571,26 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex justify-center">
-                        <span className="inline-block px-3 py-1.5 text-[9px] font-semibold rounded-xl uppercase tracking-widest border shadow-sm bg-emerald-50 text-emerald-700 border-emerald-100 min-w-[150px] text-center">
+                        <span className={`inline-block px-3 py-1.5 text-[9px] font-semibold rounded-xl uppercase tracking-widest border shadow-sm min-w-[150px] text-center ${
+                          (req.status === RequestStatus.REVISION || req.status === RequestStatus.REVISION_TO_ORGANIZER || req.status === RequestStatus.REVISION_FROM_TU || req.status === RequestStatus.REVISION_FROM_PPK) ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        }`}>
                           {req.status}
                         </span>
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <div className="max-w-[200px] text-[10px] font-bold text-slate-500 italic leading-relaxed">
-                        {req.ppkComment ? `[PPK]: ${req.ppkComment}` : (req.tuComment ? `[TU]: ${req.tuComment}` : '-')}
+                      <div className="flex items-center gap-3">
+                        <div className="max-w-[200px] text-[10px] font-bold text-slate-500 italic leading-relaxed truncate">
+                          {req.ppkComment ? `[PPK]: ${req.ppkComment}` : (req.tuComment ? `[TU]: ${req.tuComment}` : (req.organizerComment ? `[Penyelenggara]: ${req.organizerComment}` : (req.notes && req.notes !== req.trainingTitle ? `[Instruktur]: ${req.notes}` : '-')))}
+                        </div>
+                        {(req.organizerComment || req.tuComment || req.ppkComment || (req.history && req.history.some(h => h.comment))) && (
+                          <button 
+                            onClick={() => openNoteModal(req)}
+                            className="text-[8px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-2 py-1 rounded transition-all border border-amber-100"
+                          >
+                            Detail
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
@@ -459,6 +608,8 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
           </div>
         </div>
       </div>
+    </>
+    )}
     </div>
   );
 };

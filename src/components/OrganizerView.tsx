@@ -4,6 +4,7 @@ import { MaterialRequest, RequestStatus, VOCATION_COLORS, MaterialItem, instruct
 import { formatSafeDateTime, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
 import PDFPreview from './PDFPreview';
 import SiberLogo from './SiberLogo';
+import OrganizerManual from './OrganizerManual';
 import { 
   LayoutDashboard, 
   ClipboardCheck, 
@@ -56,6 +57,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
   const [previewFileName, setPreviewFileName] = useState('');
   const [previewItems, setPreviewItems] = useState<MaterialItem[]>([]);
   const [previewData, setPreviewData] = useState<string | undefined>(undefined);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
   // Body Scroll Lock & Escape Key
   React.useEffect(() => {
@@ -95,6 +97,9 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
   const pendingRequests = useMemo(() => {
     return requests.filter(r => {
       const isPending = r.status === RequestStatus.PENDING || 
+        r.status === RequestStatus.REVISION_TO_ORGANIZER ||
+        r.status === RequestStatus.REVISION_FROM_TU ||
+        r.status === RequestStatus.REVISION_FROM_PPK ||
         (r.status === RequestStatus.REVISION && r.history && r.history.length > 0 && 
          (r.history[r.history.length - 1].role === UserRole.KASUBAG_TU || 
           r.history[r.history.length - 1].role === UserRole.PPK));
@@ -116,6 +121,9 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
     return requests.filter(r => {
       const isOther = !requests.find(pr => pr.id === r.id && (
         pr.status === RequestStatus.PENDING || 
+        pr.status === RequestStatus.REVISION_TO_ORGANIZER ||
+        pr.status === RequestStatus.REVISION_FROM_TU ||
+        pr.status === RequestStatus.REVISION_FROM_PPK ||
         (pr.status === RequestStatus.REVISION && pr.history && pr.history.length > 0 && 
          (pr.history[pr.history.length - 1].role === UserRole.KASUBAG_TU || 
           pr.history[pr.history.length - 1].role === UserRole.PPK))
@@ -137,7 +145,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
   const stats = useMemo(() => {
     return {
       total: requests.length,
-      pending: requests.filter(r => r.status === RequestStatus.PENDING).length,
+      pending: requests.filter(r => r.status === RequestStatus.PENDING || r.status === RequestStatus.REVISION_TO_ORGANIZER || r.status === RequestStatus.REVISION_FROM_TU || r.status === RequestStatus.REVISION_FROM_PPK).length,
       process: requests.filter(r => [RequestStatus.APPROVED_TECHNICAL, RequestStatus.APPROVED_ADMIN].includes(r.status)).length,
       done: requests.filter(r => r.status === RequestStatus.APPROVED_FINAL).length,
       revision: requests.filter(r => r.status === RequestStatus.REVISION).length
@@ -413,13 +421,14 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                 <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Program</th>
                 <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tanggal</th>
                 <th className="px-6 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Catatan</th>
                 <th className="px-6 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {pendingRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center text-slate-300 font-black uppercase tracking-widest text-xs">
+                  <td colSpan={7} className="px-6 py-20 text-center text-slate-300 font-black uppercase tracking-widest text-xs">
                     Tidak ada antrian baru
                   </td>
                 </tr>
@@ -444,8 +453,8 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <div className="text-xs font-bold text-slate-700">{req.trainingTitle || req.programPelatihan || '-'}</div>
-                    <div className="text-[10px] text-slate-400 font-medium">{req.proglat || req.trainingType || '-'}</div>
+                    <div className="text-xs font-bold text-slate-700">{(req.trainingTitle && req.trainingTitle !== '-') ? req.trainingTitle : (req.proglat || req.programPelatihan || '-')}</div>
+                    <div className="text-[10px] text-slate-400 font-medium">{(req.trainingTitle && req.trainingTitle !== '-' && req.proglat && req.proglat !== req.trainingTitle) ? req.proglat : (req.trainingType || '-')}</div>
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
                     <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
@@ -454,10 +463,34 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                   <td className="px-6 py-5">
                     <div className="flex justify-center">
                       <span className={`px-3 py-1.5 text-[9px] font-semibold rounded-full uppercase tracking-widest border min-w-[150px] text-center ${
-                        req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-600 border-amber-100'
+                        (req.status === RequestStatus.REVISION || req.status === RequestStatus.REVISION_TO_ORGANIZER || req.status === RequestStatus.REVISION_FROM_TU || req.status === RequestStatus.REVISION_FROM_PPK) ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-600 border-amber-100'
                       }`}>
-                        {req.status}
+                        {req.status === RequestStatus.REVISION_TO_ORGANIZER ? (
+                          req.history && req.history.length > 0 && req.history[req.history.length - 1].role === UserRole.PPK ? 'PERLU REVISI (DARI PPK)' : 'PERLU REVISI (DARI TU)'
+                        ) : req.status}
                       </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="flex justify-center">
+                      {( (req.organizerComment && req.organizerComment !== '-') || 
+                         (req.tuComment && req.tuComment !== '-') || 
+                         (req.ppkComment && req.ppkComment !== '-') || 
+                         (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle && req.notes !== req.proglat) ||
+                         req.status === RequestStatus.REVISION || 
+                         req.status === RequestStatus.REVISION_TO_ORGANIZER ||
+                         req.status === RequestStatus.REVISION_FROM_TU ||
+                         req.status === RequestStatus.REVISION_FROM_PPK ||
+                         (req.history && req.history.some(h => h.comment)) ) ? (
+                        <button 
+                          onClick={() => openNoteModal(req)}
+                          className="text-[9px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-4 py-2 rounded-lg transition-all tracking-widest border border-amber-100 shadow-sm active:scale-95 whitespace-nowrap"
+                        >
+                          Lihat Catatan
+                        </button>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-400">-</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-5 text-right">
@@ -465,7 +498,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                       onClick={() => handleOpenApproval(req)}
                       className="text-[10px] font-black uppercase text-[#001F54] hover:text-white bg-blue-50 hover:bg-[#001F54] px-4 py-2 rounded-xl transition-all tracking-widest border border-blue-100"
                     >
-                      Verifikasi
+                      VERIFIKASI
                     </button>
                   </td>
                 </tr>
@@ -514,7 +547,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
             ) : otherRequests.map(req => (
               <tr key={req.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-8 py-6">
-                  <div className="text-sm font-black text-slate-800 uppercase tracking-tight">{req.trainingTitle || req.programPelatihan || '-'}</div>
+                  <div className="text-sm font-black text-slate-800 uppercase tracking-tight">{(req.trainingTitle && req.trainingTitle !== '-') ? req.trainingTitle : (req.proglat || req.programPelatihan || '-')}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase border tracking-widest ${VOCATION_COLORS[req.vocation || req.kejuruan] || 'bg-slate-100'}`}>
                       {req.vocation || req.kejuruan || '-'}
@@ -534,9 +567,13 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                   <div className="flex justify-center flex-col items-center gap-2">
                     <span className={`px-3 py-1.5 text-[9px] font-semibold rounded-full uppercase tracking-widest border min-w-[150px] text-center ${
                       req.status === RequestStatus.BAHAN_TIBA ? 'bg-green-800 text-white border-green-900' :
-                      req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-600 border-green-100' : 'bg-slate-50 text-slate-600 border-slate-100'
+                      req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-600 border-green-100' : 
+                      (req.status === RequestStatus.REVISION || req.status === RequestStatus.REVISION_TO_ORGANIZER) ? 'bg-red-50 text-red-600 border-red-100' :
+                      'bg-slate-50 text-slate-600 border-slate-100'
                     }`}>
-                      {req.status}
+                      {req.status === RequestStatus.REVISION_TO_ORGANIZER ? (
+                        req.history && req.history.length > 0 && req.history[req.history.length - 1].role === UserRole.PPK ? 'PERLU REVISI (DARI PPK)' : 'PERLU REVISI (DARI TU)'
+                      ) : req.status}
                     </span>
                     {req.status === RequestStatus.APPROVED_FINAL && (
                       <button 
@@ -555,7 +592,12 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                 </td>
                 <td className="px-8 py-6">
                   <div className="flex justify-center">
-                    {(req.organizerComment || req.tuComment || req.ppkComment || req.notes || req.status === RequestStatus.REVISION) ? (
+                    {( (req.organizerComment && req.organizerComment !== '-') || 
+                       (req.tuComment && req.tuComment !== '-') || 
+                       (req.ppkComment && req.ppkComment !== '-') || 
+                       (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle && req.notes !== req.proglat) ||
+                       req.status === RequestStatus.REVISION || 
+                       req.status === RequestStatus.REVISION_TO_ORGANIZER ) ? (
                       <button 
                         onClick={() => openNoteModal(req)}
                         className="text-[9px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-4 py-2 rounded-lg transition-all tracking-widest border border-amber-100 shadow-sm active:scale-95 whitespace-nowrap"
@@ -680,18 +722,53 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                 <div className="space-y-6">
                   <div className="bg-blue-50 rounded-3xl p-6 border border-blue-100">
                     <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4 text-center">Aksi Verifikasi</h4>
+                    
+                    {/* Show Revision Comments if any */}
+                    {(() => {
+                      const req = requests.find(r => r.id === selectedRequestId);
+                      if (!req) return null;
+                      
+                      const tuNote = req.tuComment || req.history?.filter(h => h.role === UserRole.KASUBAG_TU).pop()?.comment;
+                      const ppkNote = req.ppkComment || req.history?.filter(h => h.role === UserRole.PPK).pop()?.comment;
+
+                      return (
+                        <div className="mb-6 space-y-3">
+                          {req.status === RequestStatus.REVISION_TO_ORGANIZER && (
+                            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 animate-pulse">
+                              <p className="text-[10px] font-black text-red-600 uppercase mb-2 flex items-center gap-2">
+                                <AlertCircle size={14} />
+                                Perlu Revisi Segera
+                              </p>
+                              {tuNote && (
+                                <div className="mt-2">
+                                  <p className="text-[9px] font-black text-purple-700 uppercase mb-1">Catatan TU:</p>
+                                  <p className="text-[11px] font-bold text-slate-700 italic bg-white/50 p-2 rounded-lg">"{tuNote}"</p>
+                                </div>
+                              )}
+                              {ppkNote && (
+                                <div className="mt-2">
+                                  <p className="text-[9px] font-black text-emerald-700 uppercase mb-1">Catatan PPK:</p>
+                                  <p className="text-[11px] font-bold text-slate-700 italic bg-white/50 p-2 rounded-lg">"{ppkNote}"</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     <div className="space-y-4">
                       <button 
                         onClick={handleOpenTTE}
                         className="w-full bg-[#001F54] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-900/20 hover:bg-[#002d7a] transition-all"
                       >
-                        Teruskan ke TU
+                        TERUSKAN KE TU
                       </button>
                       <button 
                         onClick={() => handleOpenRevision(selectedRequestId)}
                         className="w-full bg-white border-2 border-red-100 text-red-600 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-red-50 transition-all"
                       >
-                        Kembalikan (Revisi)
+                        KEMBALIKAN (REVISI)
                       </button>
                     </div>
                   </div>
@@ -764,7 +841,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                     isVerified ? 'bg-[#001F54] text-white hover:bg-[#002d7a]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                 >
-                  Konfirmasi & Teruskan
+                  KONFIRMASI DAN TERUSKAN
                 </button>
               </div>
             </div>
@@ -788,7 +865,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               />
               <div className="flex gap-3">
                 <button onClick={() => setIsRevisionModalOpen(false)} className="flex-1 px-6 py-4 rounded-2xl text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50">Batal</button>
-                <button onClick={handleConfirmRevision} className="flex-[2] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all">Kirim Revisi</button>
+                <button onClick={handleConfirmRevision} className="flex-[2] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all">KIRIM REVISI</button>
               </div>
             </div>
           </div>
@@ -810,33 +887,77 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               </div>
               <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase">Catatan Pengajuan</h3>
               <div className="space-y-4 mt-6">
-                {selectedRequestForNote.organizerComment && (
-                  <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                    <p className="text-[10px] font-black text-blue-600 uppercase mb-1">Penyelenggara</p>
-                    <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.organizerComment}"</p>
-                  </div>
-                )}
-                {selectedRequestForNote.tuComment && (
-                  <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
-                    <p className="text-[10px] font-black text-purple-600 uppercase mb-1">Kasubag TU</p>
-                    <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.tuComment}"</p>
-                  </div>
-                )}
-                {selectedRequestForNote.ppkComment && (
-                  <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
-                    <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">PPK</p>
-                    <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.ppkComment}"</p>
-                  </div>
-                )}
-                {selectedRequestForNote.notes && !selectedRequestForNote.organizerComment && !selectedRequestForNote.tuComment && !selectedRequestForNote.ppkComment && (
+                {(() => {
+                  const primary = selectedRequestForNote.organizerComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.ADMIN && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                      <p className="text-[10px] font-black text-blue-600 uppercase mb-1">Penyelenggara</p>
+                      <p className="text-sm font-bold text-slate-700 italic">"{comment}"</p>
+                    </div>
+                  );
+                })()}
+
+                {(() => {
+                  const primary = selectedRequestForNote.tuComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.KASUBAG_TU && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
+                      <p className="text-[10px] font-black text-purple-600 uppercase mb-1">Kasubag TU</p>
+                      <p className="text-sm font-bold text-slate-700 italic">"{comment}"</p>
+                    </div>
+                  );
+                })()}
+
+                {(() => {
+                  const primary = selectedRequestForNote.ppkComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.PPK && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">PPK</p>
+                      <p className="text-sm font-bold text-slate-700 italic">"{comment}"</p>
+                    </div>
+                  );
+                })()}
+
+                {(selectedRequestForNote.notes && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && selectedRequestForNote.notes !== '-') && (
                   <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                    <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Catatan</p>
+                    <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Catatan Instruktur</p>
                     <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.notes}"</p>
                   </div>
                 )}
-                {!selectedRequestForNote.organizerComment && !selectedRequestForNote.tuComment && !selectedRequestForNote.ppkComment && !selectedRequestForNote.notes && (
-                  <p className="text-center text-slate-400 italic text-sm py-4">Tidak ada catatan tersedia.</p>
-                )}
+
+                {/* Activity Log Section */}
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Log Aktivitas Catatan</p>
+                  <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                    {selectedRequestForNote.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
+                      <div key={i} className="flex gap-3 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div className="w-2 h-2 rounded-full bg-blue-400 mt-1 flex-shrink-0" />
+                        <div>
+                          <p className="font-black text-slate-700 uppercase text-[9px] mb-1">{h.role}</p>
+                          <p className="font-bold text-slate-600 italic">"{h.comment}"</p>
+                          <p className="text-[9px] text-slate-400 mt-1">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(!selectedRequestForNote.history || selectedRequestForNote.history.filter(h => h.comment && h.comment !== '-').length === 0) && (
+                      <p className="text-[10px] text-slate-400 italic text-center py-2">Tidak ada log aktivitas.</p>
+                    )}
+                  </div>
+                </div>
               </div>
               <button onClick={() => setIsNoteModalOpen(false)} className="w-full mt-8 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs">Tutup</button>
             </div>
@@ -980,6 +1101,12 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
             </p>
           </div>
           <div className="flex items-center gap-6">
+            <button
+              onClick={() => setIsManualModalOpen(true)}
+              className="bg-white hover:bg-slate-50 text-[#001F54] px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all border border-[#001F54] shadow-sm active:scale-95"
+            >
+              Panduan Sistem
+            </button>
             <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sistem Online</span>
@@ -994,25 +1121,51 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-slate-50/50">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={activeMenu}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-8"
-            >
-              {activeMenu === 'dashboard' && renderDashboard()}
-              {activeMenu === 'validation' && renderValidation()}
-              {activeMenu === 'archive' && renderArchive()}
-              {activeMenu === 'users' && renderUsers()}
-              {activeMenu === 'settings' && (
-                <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
-                  <Settings size={64} className="mx-auto text-slate-200 mb-6" />
-                  <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">Fitur Ganti Password Sedang Dikembangkan</h3>
+            {isManualModalOpen ? (
+              <motion.div
+                key="manual"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-8"
+              >
+                <div className="flex items-center justify-between border-b-2 border-slate-200 pb-6">
+                  <div>
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Panduan Sistem Penyelenggara</h2>
+                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mt-1">Langkah-langkah verifikasi teknis</p>
+                  </div>
+                  <button
+                    onClick={() => setIsManualModalOpen(false)}
+                    className="flex items-center gap-2 text-slate-500 hover:text-[#001F54] transition-colors font-black uppercase text-xs tracking-widest bg-white px-6 py-3 rounded-xl border border-slate-200 shadow-sm active:scale-95"
+                  >
+                    <ChevronLeft size={20} />
+                    Kembali
+                  </button>
                 </div>
-              )}
-            </motion.div>
+                <OrganizerManual />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={activeMenu}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-8"
+              >
+                {activeMenu === 'dashboard' && renderDashboard()}
+                {activeMenu === 'validation' && renderValidation()}
+                {activeMenu === 'archive' && renderArchive()}
+                {activeMenu === 'users' && renderUsers()}
+                {activeMenu === 'settings' && (
+                  <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
+                    <Settings size={64} className="mx-auto text-slate-200 mb-6" />
+                    <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">Fitur Ganti Password Sedang Dikembangkan</h3>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </main>

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { MaterialRequest, RequestStatus, VocationalCategory, VOCATION_COLORS, PROGLAT_MAPPING, User, TrainingType, PBK_PROGRAMS, PBL_PROGRAMS } from '../types';
+import { MaterialRequest, RequestStatus, VocationalCategory, VOCATION_COLORS, PROGLAT_MAPPING, User, TrainingType, PBK_PROGRAMS, PBL_PROGRAMS, UserRole } from '../types';
 import { formatSafeDate, formatSafeDateTime, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
 import PDFPreview from './PDFPreview';
 import InstructorManual from './InstructorManual';
@@ -20,6 +20,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [editingRequestId, setEditingRequestId] = useState<string | null>(null);
   const [trainingType, setTrainingType] = useState<TrainingType>(TrainingType.PBK);
   const [kejuruan, setKejuruan] = useState<string>('');
   const [programPelatihan, setProgramPelatihan] = useState('');
@@ -146,6 +147,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
     setIsSubmitting(true);
     try {
       await onSubmit({
+        id: editingRequestId || undefined,
         trainingTitle: programPelatihan,
         vocation: kejuruan as VocationalCategory,
         proglat: programPelatihan,
@@ -163,6 +165,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
       setFile(null);
       setPreviewUrl(null);
       setAttachmentData(null);
+      setEditingRequestId(null);
       setShowForm(false);
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
@@ -186,6 +189,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
 
   const handlePerbaiki = () => {
     if (selectedRequestForNote) {
+      setEditingRequestId(selectedRequestForNote.id);
       setKejuruan(selectedRequestForNote.kejuruan);
       setProgramPelatihan(selectedRequestForNote.programPelatihan);
       setTrainingType(selectedRequestForNote.trainingType);
@@ -392,39 +396,85 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
 
               <h3 className="text-2xl font-black text-slate-900 mb-2">Pesan Verifikasi</h3>
               <p className="text-slate-500 text-sm mb-6 leading-relaxed italic">
-                Berikut adalah riwayat catatan untuk pengajuan <b>"{selectedRequestForNote.trainingTitle}"</b>:
+                Berikut adalah riwayat catatan untuk pengajuan <b>"{selectedRequestForNote.trainingTitle || selectedRequestForNote.proglat || selectedRequestForNote.programPelatihan || 'Pengajuan'}"</b>:
               </p>
 
               <div className="space-y-4 mb-8">
-                {selectedRequestForNote.organizerComment && (
-                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-2xl">
-                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Penyelenggara (Teknis)</p>
-                    <p className="text-sm text-slate-700 font-bold">{selectedRequestForNote.organizerComment}</p>
-                  </div>
-                )}
-                {selectedRequestForNote.tuComment && (
-                  <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-2xl">
-                    <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Kasubag TU (Administrasi)</p>
-                    <p className="text-sm text-slate-700 font-bold">{selectedRequestForNote.tuComment}</p>
-                  </div>
-                )}
-                {selectedRequestForNote.ppkComment && (
-                  <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-2xl">
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">PPK (Final)</p>
-                    <p className="text-sm text-slate-700 font-bold">{selectedRequestForNote.ppkComment}</p>
-                  </div>
-                )}
-                {selectedRequestForNote.notes && !selectedRequestForNote.organizerComment && !selectedRequestForNote.tuComment && !selectedRequestForNote.ppkComment && (
+                {(() => {
+                  const primary = selectedRequestForNote.organizerComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.ADMIN && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-2xl">
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Penyelenggara (Teknis)</p>
+                      <p className="text-sm text-slate-700 font-bold">{comment}</p>
+                    </div>
+                  );
+                })()}
+
+                {(() => {
+                  const primary = selectedRequestForNote.tuComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.KASUBAG_TU && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-2xl">
+                      <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Kasubag TU (Administrasi)</p>
+                      <p className="text-sm text-slate-700 font-bold">{comment}</p>
+                    </div>
+                  );
+                })()}
+
+                {(() => {
+                  const primary = selectedRequestForNote.ppkComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.PPK && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-2xl">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">PPK (Final)</p>
+                      <p className="text-sm text-slate-700 font-bold">{comment}</p>
+                    </div>
+                  );
+                })()}
+
+                {(selectedRequestForNote.notes && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && selectedRequestForNote.notes !== '-') && (
                   <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl">
-                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Catatan</p>
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Catatan Instruktur</p>
                     <p className="text-sm text-slate-700 font-bold">{selectedRequestForNote.notes}</p>
                   </div>
                 )}
-                {!selectedRequestForNote.organizerComment && !selectedRequestForNote.tuComment && !selectedRequestForNote.ppkComment && !selectedRequestForNote.notes && (
-                  <p className="text-center text-slate-400 italic text-sm py-4">Tidak ada catatan tersedia.</p>
-                )}
-              </div>
 
+                {/* Activity Log Section */}
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Log Aktivitas Catatan</p>
+                  <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                    {selectedRequestForNote.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
+                      <div key={i} className="flex gap-3 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div className="w-2 h-2 rounded-full bg-blue-400 mt-1 flex-shrink-0" />
+                        <div>
+                          <p className="font-black text-slate-700 uppercase text-[9px] mb-1">{h.role}</p>
+                          <p className="font-bold text-slate-600 italic">"{h.comment}"</p>
+                          <p className="text-[9px] text-slate-400 mt-1">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(!selectedRequestForNote.history || selectedRequestForNote.history.filter(h => h.comment && h.comment !== '-').length === 0) && (
+                      <p className="text-[10px] text-slate-400 italic text-center py-2">Tidak ada log aktivitas.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 bg-slate-50 border-t border-slate-100">
               <div className="flex gap-3">
                 <button 
                   onClick={() => setIsNoteModalOpen(false)}
@@ -452,7 +502,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
               className="flex items-center gap-2 text-slate-500 hover:text-[#003399] transition-colors font-bold text-sm"
             >
               <ChevronLeft size={20} />
-              Kembali ke Pengajuan
+              Kembali
             </button>
           </div>
           <InstructorManual />
@@ -708,14 +758,14 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
               ) : requests.map((req) => (
                 <tr key={req.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-6">
-                    <div className="text-sm font-black text-slate-800 mb-2">{req.trainingTitle}</div>
+                    <div className="text-sm font-black text-slate-800 mb-2">{(req.trainingTitle && req.trainingTitle !== '-') ? req.trainingTitle : (req.proglat || req.programPelatihan || '-')}</div>
                     <div className="flex flex-col gap-1.5">
                       <div className="flex items-center gap-2">
                         <span className={`text-[9px] px-3 py-0.5 rounded-full font-black uppercase border shadow-sm ${VOCATION_COLORS[req.vocation] || 'bg-slate-100'}`}>
                           {req.vocation}
                         </span>
                       </div>
-                      <span className="text-[11px] font-bold text-slate-500">{req.proglat}</span>
+                      <span className="text-[11px] font-bold text-slate-500">{(req.trainingTitle && req.trainingTitle !== '-' && req.proglat && req.proglat !== req.trainingTitle) ? req.proglat : ''}</span>
                     </div>
                   </td>
                   <td className="px-6 py-6 whitespace-nowrap">
@@ -729,17 +779,26 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                         req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-700 border-green-200' :
                         req.status === RequestStatus.PENDING ? 'bg-amber-50 text-amber-700 border-amber-200' :
                         req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-700 border-red-200' :
+                        req.status === RequestStatus.REVISION_TO_ORGANIZER || req.status === RequestStatus.REVISION_FROM_TU || req.status === RequestStatus.REVISION_FROM_PPK ? 'bg-blue-50 text-blue-700 border-blue-200' :
                         req.status === RequestStatus.APPROVED_TECHNICAL ? 'bg-blue-50 text-blue-700 border-blue-200' :
                         req.status === RequestStatus.APPROVED_ADMIN ? 'bg-purple-100 text-purple-800 border-purple-200' :
                         'bg-slate-50 text-slate-700 border-slate-200'
                       }`}>
-                        {req.status}
+                        {(req.status === RequestStatus.REVISION_TO_ORGANIZER || req.status === RequestStatus.REVISION_FROM_TU || req.status === RequestStatus.REVISION_FROM_PPK) ? 'Sedang Diproses' : req.status}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-6">
                     <div className="flex justify-center">
-                      {(req.organizerComment || req.tuComment || req.ppkComment || req.notes || req.status === RequestStatus.REVISION) ? (
+                      {( (req.organizerComment && req.organizerComment !== '-') || 
+                         (req.tuComment && req.tuComment !== '-') || 
+                         (req.ppkComment && req.ppkComment !== '-') || 
+                         (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle && req.notes !== req.proglat) ||
+                         req.status === RequestStatus.REVISION || 
+                         req.status === RequestStatus.REVISION_TO_ORGANIZER ||
+                         req.status === RequestStatus.REVISION_FROM_TU ||
+                         req.status === RequestStatus.REVISION_FROM_PPK ||
+                         (req.history && req.history.some(h => h.comment)) ) ? (
                         <button 
                           onClick={() => openNoteModal(req)}
                           className="text-[9px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-4 py-2 rounded-lg transition-all tracking-widest border border-amber-100 shadow-sm active:scale-95 whitespace-nowrap"

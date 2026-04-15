@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { MaterialRequest, RequestStatus, VOCATION_COLORS, User, UserRole, HistoryLog, instructorNameMap } from '../types';
 import { formatSafeDateTime, getSafeYear } from '../lib/dateUtils';
 import PDFPreview from './PDFPreview';
+import TUManual from './TUManual';
+import { ChevronLeft } from 'lucide-react';
 
 interface KasubagTUViewProps {
   user: User;
@@ -18,6 +20,9 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
   const [tuNote, setTuNote] = useState('');
   const [isArchiveView, setIsArchiveView] = useState(false);
   const [showTechnicalNotes, setShowTechnicalNotes] = useState(false);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [selectedRequestForNote, setSelectedRequestForNote] = useState<MaterialRequest | null>(null);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
   // TTE Upload States
   const [isTTEModalOpen, setIsTTEModalOpen] = useState(false);
@@ -33,12 +38,14 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
     r.status === RequestStatus.APPROVED_ADMIN || 
     r.status === RequestStatus.APPROVED_FINAL || 
     r.status === RequestStatus.COMPLETED ||
-    (r.status === RequestStatus.REVISION && r.history?.some(h => h.role === UserRole.KASUBAG_TU))
+    (r.status === RequestStatus.REVISION && (r.history?.some(h => h.role === UserRole.KASUBAG_TU) || r.tuComment)) ||
+    (r.status === RequestStatus.REVISION_TO_ORGANIZER && (r.history?.some(h => h.role === UserRole.KASUBAG_TU) || r.tuComment)) ||
+    (r.status === RequestStatus.REVISION_FROM_TU)
   );
 
   // Body Scroll Lock for Modals
   React.useEffect(() => {
-    if (isTTEModalOpen || isDetailModalOpen || isRevisionModalOpen) {
+    if (isTTEModalOpen || isDetailModalOpen || isRevisionModalOpen || isNoteModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -46,7 +53,12 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isTTEModalOpen, isDetailModalOpen, isRevisionModalOpen]);
+  }, [isTTEModalOpen, isDetailModalOpen, isRevisionModalOpen, isNoteModalOpen]);
+
+  const openNoteModal = (req: MaterialRequest) => {
+    setSelectedRequestForNote(req);
+    setIsNoteModalOpen(true);
+  };
 
   const handleOpenDetail = (req: MaterialRequest, isArchive: boolean = false) => {
     setSelectedRequest(req);
@@ -153,7 +165,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
       alert("Catatan revisi wajib diisi!");
       return;
     }
-    onAction(selectedRequest.id, RequestStatus.REVISION, revisionNote);
+    onAction(selectedRequest.id, RequestStatus.REVISION_FROM_TU, revisionNote);
     setIsRevisionModalOpen(false);
     setIsDetailModalOpen(false);
     setSelectedRequest(null);
@@ -430,15 +442,9 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
               >
                 Batal
               </button>
-              <button 
-                onClick={handleConfirmTTE}
-                disabled={!isVerified}
-                className={`flex-[2] px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 ${
-                  isVerified ? 'bg-purple-700 hover:bg-purple-800 text-white shadow-purple-100' : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                }`}
-              >
-                Konfirmasi & Setujui TTE
-              </button>
+                <button onClick={handleConfirmTTE} className="flex-[2] bg-purple-700 hover:bg-purple-800 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-purple-100 transition-all active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed" disabled={!isVerified}>
+                  Konfirmasi dan Teruskan
+                </button>
             </div>
           </div>
         </div>
@@ -460,29 +466,56 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
               />
               <div className="flex gap-3">
                 <button onClick={() => setIsRevisionModalOpen(false)} className="flex-1 px-6 py-4 rounded-2xl text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50">Batal</button>
-                <button onClick={handleConfirmRevision} className="flex-[2] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all active:scale-95">Kirim Pengembalian</button>
+                <button onClick={handleConfirmRevision} className="flex-[2] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all active:scale-95">Kirim Revisi</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex justify-between items-end border-b-2 border-slate-200 pb-6">
-        <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">KASUBAG TU</h2>
-          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">Pemeriksaan Kelengkapan Administrasi</p>
-        </div>
-        <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="text-right">
-            <span className="text-3xl font-black text-[#003399] leading-none">{tuRequests.length}</span>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Antrian TU</p>
+      {isManualModalOpen ? (
+        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="flex items-center justify-between border-b-2 border-slate-200 pb-6">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Panduan Sistem TU</h2>
+              <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">Langkah-langkah verifikasi administrasi</p>
+            </div>
+            <button
+              onClick={() => setIsManualModalOpen(false)}
+              className="flex items-center gap-2 text-slate-500 hover:text-[#003399] transition-colors font-black uppercase text-xs tracking-widest bg-white px-6 py-3 rounded-xl border border-slate-200 shadow-sm active:scale-95"
+            >
+              <ChevronLeft size={20} />
+              Kembali
+            </button>
           </div>
-          <div className="h-10 w-px bg-slate-100"></div>
-          <div className="bg-blue-50 p-2 rounded-xl">
-             <svg className="w-6 h-6 text-[#003399]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-          </div>
+          <TUManual />
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="flex justify-between items-end border-b-2 border-slate-200 pb-6">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">KASUBAG TU</h2>
+              <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">Pemeriksaan Kelengkapan Administrasi</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setIsManualModalOpen(true)}
+                className="bg-white hover:bg-slate-50 text-[#003399] px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all border border-[#003399] shadow-sm active:scale-95 h-fit mb-1"
+              >
+                Panduan Sistem
+              </button>
+              <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div className="text-right">
+                  <span className="text-3xl font-black text-[#003399] leading-none">{tuRequests.length}</span>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Antrian TU</p>
+                </div>
+                <div className="h-10 w-px bg-slate-100"></div>
+                <div className="bg-blue-50 p-2 rounded-xl">
+                   <svg className="w-6 h-6 text-[#003399]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+              </div>
+            </div>
+          </div>
 
       <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto w-full">
@@ -520,8 +553,8 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                       </span>
                     </td>
                   <td className="px-8 py-6">
-                    <div className="text-xs font-bold text-slate-700">{req.trainingTitle || req.programPelatihan || '-'}</div>
-                    <div className="text-[10px] text-slate-400 font-medium">{req.proglat || req.trainingType || '-'}</div>
+                    <div className="text-xs font-bold text-slate-700">{(req.trainingTitle && req.trainingTitle !== '-') ? req.trainingTitle : (req.proglat || req.programPelatihan || '-')}</div>
+                    <div className="text-[10px] text-slate-400 font-medium">{(req.trainingTitle && req.trainingTitle !== '-' && req.proglat && req.proglat !== req.trainingTitle) ? req.proglat : (req.trainingType || '-')}</div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
                     <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
@@ -544,7 +577,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                       onClick={() => handleOpenDetail(req)}
                       className="text-[10px] font-black uppercase text-[#003399] hover:text-white bg-blue-50 hover:bg-[#003399] px-6 py-3 rounded-xl transition-all tracking-[0.15em] border border-blue-100 shadow-sm active:scale-95"
                     >
-                      Verifikasi Admin
+                      Verifikasi
                     </button>
                   </td>
                 </tr>
@@ -585,7 +618,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                 ) : tuArchive.map((req) => (
                   <tr key={req.id} className="hover:bg-slate-50/30 transition-colors">
                     <td className="px-8 py-6">
-                      <div className="text-xs font-black text-slate-800 uppercase tracking-tight">{req.trainingTitle || req.programPelatihan || '-'}</div>
+                      <div className="text-xs font-black text-slate-800 uppercase tracking-tight">{(req.trainingTitle && req.trainingTitle !== '-') ? req.trainingTitle : (req.proglat || req.programPelatihan || '-')}</div>
                       <span className={`text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase border mt-1 inline-block ${VOCATION_COLORS[req.vocation || req.kejuruan] || 'bg-slate-100'}`}>
                         {req.vocation || req.kejuruan || '-'}
                       </span>
@@ -603,15 +636,25 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     <td className="px-8 py-6">
                       <div className="flex justify-center">
                         <span className={`inline-block px-3 py-1.5 text-[9px] font-semibold rounded-xl uppercase tracking-widest border shadow-sm min-w-[150px] text-center ${
-                          req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                          (req.status === RequestStatus.REVISION || req.status === RequestStatus.REVISION_TO_ORGANIZER || req.status === RequestStatus.REVISION_FROM_TU || req.status === RequestStatus.REVISION_FROM_PPK) ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'
                         }`}>
                           {req.status}
                         </span>
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <div className="max-w-[200px] text-[10px] font-bold text-slate-500 italic leading-relaxed">
-                        {req.ppkComment ? `[PPK]: ${req.ppkComment}` : (req.tuComment ? `[TU]: ${req.tuComment}` : (req.organizerComment ? `[Penyelenggara]: ${req.organizerComment}` : '-'))}
+                      <div className="flex items-center gap-3">
+                        <div className="max-w-[200px] text-[10px] font-bold text-slate-500 italic leading-relaxed truncate">
+                          {req.ppkComment ? `[PPK]: ${req.ppkComment}` : (req.tuComment ? `[TU]: ${req.tuComment}` : (req.organizerComment ? `[Penyelenggara]: ${req.organizerComment}` : (req.notes && req.notes !== req.trainingTitle ? `[Instruktur]: ${req.notes}` : '-')))}
+                        </div>
+                        {(req.organizerComment || req.tuComment || req.ppkComment || (req.history && req.history.some(h => h.comment))) && (
+                          <button 
+                            onClick={() => openNoteModal(req)}
+                            className="text-[8px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-2 py-1 rounded transition-all border border-amber-100"
+                          >
+                            Detail
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
@@ -630,6 +673,106 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
         </div>
       </div>
       {/* Success Toast */}
+      {/* Note History Modal */}
+      {isNoteModalOpen && selectedRequestForNote && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Riwayat Catatan</h3>
+                <button onClick={() => setIsNoteModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {(() => {
+                  const primary = selectedRequestForNote.organizerComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.ADMIN && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-2xl">
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Penyelenggara (Teknis)</p>
+                      <p className="text-sm text-slate-700 font-bold italic">"{comment}"</p>
+                    </div>
+                  );
+                })()}
+
+                {(() => {
+                  const primary = selectedRequestForNote.tuComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.KASUBAG_TU && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-2xl">
+                      <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Kasubag TU (Administrasi)</p>
+                      <p className="text-sm text-slate-700 font-bold italic">"{comment}"</p>
+                    </div>
+                  );
+                })()}
+
+                {(() => {
+                  const primary = selectedRequestForNote.ppkComment;
+                  const comment = (primary && primary !== '-' && primary !== '') 
+                    ? primary 
+                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.PPK && h.comment && h.comment !== '-').pop()?.comment;
+                  
+                  if (!comment || comment === '-') return null;
+                  return (
+                    <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-2xl">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">PPK (Final)</p>
+                      <p className="text-sm text-slate-700 font-bold italic">"{comment}"</p>
+                    </div>
+                  );
+                })()}
+
+                {(selectedRequestForNote.notes && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && selectedRequestForNote.notes !== '-') && (
+                  <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl">
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Catatan Instruktur</p>
+                    <p className="text-sm text-slate-700 font-bold italic">"{selectedRequestForNote.notes}"</p>
+                  </div>
+                )}
+
+                {/* Activity Log Section */}
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Log Aktivitas Catatan</p>
+                  <div className="space-y-3">
+                    {selectedRequestForNote.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
+                      <div key={i} className="flex gap-3 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div className="w-2 h-2 rounded-full bg-blue-400 mt-1 flex-shrink-0" />
+                        <div>
+                          <p className="font-black text-slate-700 uppercase text-[9px] mb-1">{h.role}</p>
+                          <p className="font-bold text-slate-600 italic">"{h.comment}"</p>
+                          <p className="text-[9px] text-slate-400 mt-1">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(!selectedRequestForNote.history || selectedRequestForNote.history.filter(h => h.comment && h.comment !== '-').length === 0) && (
+                      <p className="text-[10px] text-slate-400 italic text-center py-2">Tidak ada log aktivitas.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setIsNoteModalOpen(false)}
+                className="w-full mt-8 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-800 transition-all active:scale-95"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+        </>
+      )}
+
       {showSuccessToast && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] animate-bounce">
           <div className="bg-emerald-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border-2 border-emerald-400">

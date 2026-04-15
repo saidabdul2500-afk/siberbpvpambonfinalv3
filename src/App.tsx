@@ -20,6 +20,17 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [pendingSyncIds, setPendingSyncIds] = useState<Set<string>>(new Set());
+
+  // Helper to sort requests by date descending
+  const sortRequests = (reqs: MaterialRequest[]) => {
+    return [...reqs].sort((a, b) => {
+      const dateA = a.dateSubmitted ? new Date(a.dateSubmitted).getTime() : 0;
+      const dateB = b.dateSubmitted ? new Date(b.dateSubmitted).getTime() : 0;
+      if (isNaN(dateA) || isNaN(dateB)) return 0;
+      return dateB - dateA;
+    });
+  };
 
   // Load users from Google Sheets
   useEffect(() => {
@@ -63,6 +74,11 @@ const App: React.FC = () => {
 
   // Load data on mount and set up polling
   const fetchRequests = async () => {
+    if (isSyncing) {
+      console.log('Sync in progress, skipping fetch to avoid race condition');
+      return;
+    }
+    
     try {
       const response = await fetch('/api/requests');
       const text = await response.text();
@@ -76,15 +92,20 @@ const App: React.FC = () => {
             // Helper to get value by multiple possible header names
             const getVal = (keys: string[]) => {
               for (const key of keys) {
+                const val = req[key];
+                if (val !== undefined && val !== null && val !== '') return val;
+              }
+              // Second pass: check if any key exists but is empty string
+              for (const key of keys) {
                 if (req[key] !== undefined && req[key] !== null) return req[key];
               }
               return undefined;
             };
 
-            let status = getVal(['status', 'Status']);
+            let status = getVal(['status', 'Status', 'status_request']);
             const trainingType = getVal(['trainingType', 'Jenis Pelatihan', 'training_type']);
-            const signedData = getVal(['signedDocumentData', 'Data TTE', 'signed_document_data', 'TTE']);
-            let vocation = getVal(['vocation', 'Kejuruan', 'kejuruan']);
+            const signedData = getVal(['signedDocumentData', 'Data TTE', 'signed_document_data', 'TTE', 'tte_data']);
+            let vocation = getVal(['vocation', 'Kejuruan', 'kejuruan', 'vocation_category']);
 
             // Fix for column shift: if status looks like a training type, it's probably in the wrong column
             // and the real status might be in the 'Data TTE' column (as seen in user's spreadsheet)
@@ -100,7 +121,7 @@ const App: React.FC = () => {
             
             // If vocation is missing but 'Data Lampiran' contains a vocation string
             if (!vocation || vocation === '-') {
-              const possibleVocation = getVal(['Data Lampiran', 'Lampiran']);
+              const possibleVocation = getVal(['Data Lampiran', 'Lampiran', 'attachment_data']);
               if (Object.values(VocationalCategory).includes(possibleVocation as VocationalCategory)) {
                 vocation = possibleVocation;
               }
@@ -119,33 +140,78 @@ const App: React.FC = () => {
             }
 
             return {
-              id: getVal(['id', 'ID Pengajuan', 'id_pengajuan']),
-              instructorName: getVal(['instructorName', 'Nama Instruktur', 'nama_instruktur']),
-              trainingTitle: getVal(['trainingTitle', 'Program Pelatihan', 'training_title']),
+              id: getVal(['id', 'ID Pengajuan', 'id_pengajuan', 'id_request']),
+              instructorName: getVal(['instructorName', 'Nama Instruktur', 'nama_instruktur', 'instructor_name']),
+              trainingTitle: getVal(['trainingTitle', 'Program Pelatihan', 'training_title', 'program_pelatihan']),
               vocation: vocation,
-              proglat: getVal(['proglat', 'Proglat']),
-              dateSubmitted: getVal(['dateSubmitted', 'Tanggal', 'tanggal']),
+              proglat: getVal(['proglat', 'Proglat', 'program_pelatihan_detail']),
+              dateSubmitted: getVal(['dateSubmitted', 'Tanggal', 'tanggal', 'date_submitted']),
               status: status,
-              notes: getVal(['notes', 'Catatan']),
-              organizerComment: getVal(['organizerComment', 'Catatan Penyelenggara', 'organizer_comment']),
-              tuComment: getVal(['tuComment', 'Catatan TU', 'tu_comment']),
-              ppkComment: getVal(['ppkComment', 'Catatan PPK', 'ppk_comment']),
-              attachmentName: getVal(['attachmentName', 'Nama Lampiran', 'attachment_name']),
-              attachmentData: getVal(['attachmentData', 'Data Lampiran', 'attachment_data', 'Lampiran']),
-              signedDocumentName: getVal(['signedDocumentName', 'Nama TTE', 'signed_document_name']),
+              notes: getVal(['notes', 'Catatan', 'catatan_instruktur', 'instructor_notes']),
+              organizerComment: getVal(['organizerComment', 'Catatan Penyelenggara', 'organizer_comment', 'catatan_penyelenggara']),
+              tuComment: getVal(['tuComment', 'Catatan TU', 'tu_comment', 'catatan_tu']),
+              ppkComment: getVal(['ppkComment', 'Catatan PPK', 'ppk_comment', 'catatan_ppk']),
+              attachmentName: getVal(['attachmentName', 'Nama Lampiran', 'attachment_name', 'nama_berkas']),
+              attachmentData: getVal(['attachmentData', 'Data Lampiran', 'attachment_data', 'Lampiran', 'berkas_data']),
+              signedDocumentName: getVal(['signedDocumentName', 'Nama TTE', 'signed_document_name', 'nama_tte']),
               signedDocumentData: signedData,
-              history: Array.isArray(req.history) ? req.history : (typeof req.history === 'string' ? JSON.parse(req.history) : []),
-              items: Array.isArray(req.items) ? req.items : [],
+              history: (() => {
+                const h = getVal(['history', 'Riwayat', 'history_log', 'riwayat_log']);
+                if (Array.isArray(h)) return h;
+                if (typeof h === 'string') {
+                  try {
+                    return JSON.parse(h);
+                  } catch (e) {
+                    console.error('Failed to parse history:', h);
+                    return [];
+                  }
+                }
+                return [];
+              })(),
+              items: (() => {
+                const it = getVal(['items', 'Barang', 'items_list', 'daftar_barang']);
+                if (Array.isArray(it)) return it;
+                if (typeof it === 'string') {
+                  try {
+                    return JSON.parse(it);
+                  } catch (e) {
+                    console.error('Failed to parse items:', it);
+                    return [];
+                  }
+                }
+                return [];
+              })(),
               trainingType: trainingType,
-              programPelatihan: getVal(['programPelatihan', 'Program Pelatihan', 'program_pelatihan']),
+              programPelatihan: getVal(['programPelatihan', 'Program Pelatihan', 'program_pelatihan', 'training_program']),
               kejuruan: vocation
-            };
+            } as MaterialRequest;
           });
+
+          const sortedRequests = sortRequests(mappedRequests);
           
-          // Only update if data has actually changed to avoid unnecessary re-renders
+          // Merge logic: Don't overwrite requests that are currently being synced
           setRequests(prev => {
-            const isChanged = JSON.stringify(prev) !== JSON.stringify(mappedRequests);
-            return isChanged ? mappedRequests : prev;
+            const merged = [...sortedRequests];
+            
+            // If we have local requests that are pending sync, keep them
+            if (pendingSyncIds.size > 0) {
+              prev.forEach(localReq => {
+                if (pendingSyncIds.has(String(localReq.id))) {
+                  const index = merged.findIndex(r => String(r.id) === String(localReq.id));
+                  if (index !== -1) {
+                    merged[index] = localReq;
+                  } else {
+                    merged.unshift(localReq);
+                  }
+                }
+              });
+            }
+            
+            const sortedMerged = sortRequests(merged);
+            if (JSON.stringify(prev) !== JSON.stringify(sortedMerged)) {
+              return sortedMerged;
+            }
+            return prev;
           });
           setHasLoadedInitialData(true);
           setSyncError(null);
@@ -201,7 +267,7 @@ const App: React.FC = () => {
   }, []);
 
   const saveRequests = (newReqs: MaterialRequest[], action?: 'ADD' | 'UPDATE', targetReq?: MaterialRequest) => {
-    setRequests(newReqs);
+    setRequests(sortRequests(newReqs));
     // Trigger sync to Google Sheets
     if (hasLoadedInitialData && action && targetReq) {
       syncSingleRequest(targetReq, action);
@@ -211,7 +277,36 @@ const App: React.FC = () => {
   const syncSingleRequest = async (req: MaterialRequest, action: 'ADD' | 'UPDATE') => {
     setIsSyncing(true);
     setSyncError(null);
+    
+    // Add to pending sync set to prevent polling from overwriting local state
+    setPendingSyncIds(prev => new Set(prev).add(String(req.id)));
+
     try {
+      // Map to spreadsheet headers to ensure Apps Script can find the columns
+      const spreadsheetRequest = {
+        ...req,
+        'ID Pengajuan': req.id,
+        'Nama Instruktur': instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName,
+        'Program Pelatihan': req.trainingTitle,
+        'Kejuruan': req.vocation,
+        'Proglat': req.proglat,
+        'Tanggal': req.dateSubmitted,
+        'Status': req.status,
+        'Catatan': req.notes,
+        'Catatan Penyelenggara': req.organizerComment,
+        'Catatan TU': req.tuComment,
+        'Catatan PPK': req.ppkComment,
+        'Nama Lampiran': req.attachmentName,
+        'Data Lampiran': req.attachmentData,
+        'Nama TTE': req.signedDocumentName,
+        'Data TTE': req.signedDocumentData,
+        'Riwayat': JSON.stringify(req.history || []),
+        'Barang': JSON.stringify(req.items || []),
+        'Jenis Pelatihan': req.trainingType,
+        history: JSON.stringify(req.history || []),
+        items: JSON.stringify(req.items || [])
+      };
+
       const response = await fetch('/api/sync-single', {
         method: 'POST',
         headers: {
@@ -219,10 +314,7 @@ const App: React.FC = () => {
         },
         body: JSON.stringify({ 
           action, 
-          request: {
-            ...req,
-            instructorName: instructorNameMap[(req.instructorName || '').toUpperCase()] || req.instructorName
-          } 
+          request: spreadsheetRequest
         }),
       });
       
@@ -230,11 +322,25 @@ const App: React.FC = () => {
       if (!response.ok) throw new Error(result.error || 'Gagal sinkronisasi');
       
       // Refresh data after sync to ensure all tabs are consistent
-      fetchRequests();
+      // Add a longer delay to allow Google Sheets to process the update
+      setTimeout(() => {
+        setPendingSyncIds(prev => {
+          const next = new Set(prev);
+          next.delete(String(req.id));
+          return next;
+        });
+        fetchRequests();
+      }, 15000); // Increased to 15s for better reliability
     } catch (error: any) {
       console.error('Sync error:', error);
       setSyncError(error.message);
       alert(`Gagal sinkronisasi: ${error.message}`);
+      // Remove from pending on error so user can retry or see server state
+      setPendingSyncIds(prev => {
+        const next = new Set(prev);
+        next.delete(String(req.id));
+        return next;
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -253,17 +359,30 @@ const App: React.FC = () => {
   };
 
   const handleInstructorSubmit = (req: Partial<MaterialRequest>) => {
+    const isUpdate = !!req.id;
+    const existingReq = isUpdate ? requests.find(r => String(r.id) === String(req.id)) : null;
+
+    const newHistory: HistoryLog = {
+      date: new Date().toISOString(),
+      user: currentUser?.displayName || 'Sistem',
+      role: UserRole.INSTRUCTOR,
+      action: isUpdate ? 'Pengajuan Diperbaiki' : 'Pengajuan Dibuat'
+    };
+
     const updatedReq = { 
       ...req, 
-      id: Math.random().toString(36).substr(2, 9),
-      history: [{
-        date: new Date().toISOString(),
-        user: currentUser?.displayName || 'Sistem',
-        role: UserRole.INSTRUCTOR,
-        action: 'Pengajuan Dibuat'
-      }]
+      id: req.id || Math.random().toString(36).substr(2, 9),
+      history: isUpdate && existingReq 
+        ? [...(existingReq.history || []), newHistory]
+        : [newHistory]
     } as MaterialRequest;
-    saveRequests([updatedReq, ...requests], 'ADD', updatedReq);
+
+    if (isUpdate) {
+      const updatedReqs = requests.map(r => String(r.id) === String(req.id) ? updatedReq : r);
+      saveRequests(updatedReqs, 'UPDATE', updatedReq);
+    } else {
+      saveRequests([updatedReq, ...requests], 'ADD', updatedReq);
+    }
   };
 
   const handleStatusUpdate = (id: string, status: RequestStatus, comment?: string, signedDocName?: string, signedDocData?: string) => {
@@ -275,20 +394,28 @@ const App: React.FC = () => {
           user: currentUser?.displayName || 'Sistem',
           role: currentUser?.role || UserRole.ADMIN,
           action: status === RequestStatus.REVISION ? 'Dikembalikan (Revisi)' : 
+                  status === RequestStatus.REVISION_TO_ORGANIZER ? 'Dikembalikan ke Penyelenggara (Revisi)' :
+                  status === RequestStatus.REVISION_FROM_TU ? 'Dikembalikan ke Penyelenggara (Revisi dari TU)' :
+                  status === RequestStatus.REVISION_FROM_PPK ? 'Dikembalikan ke Penyelenggara (Revisi dari PPK)' :
                   status === RequestStatus.APPROVED_TECHNICAL ? 'Diverifikasi Penyelenggara' :
                   status === RequestStatus.APPROVED_ADMIN ? 'Disetujui TU' :
                   status === RequestStatus.APPROVED_FINAL ? 'Disetujui PPK' : 'Update Status',
-          comment
+          comment: comment || undefined
         };
+
+        // Explicitly preserve existing comments if not being updated by the current role
+        const updatedOrganizerComment = currentUser?.role === UserRole.ADMIN ? (comment || r.organizerComment) : r.organizerComment;
+        const updatedTuComment = currentUser?.role === UserRole.KASUBAG_TU ? (comment || r.tuComment) : r.tuComment;
+        const updatedPpkComment = currentUser?.role === UserRole.PPK ? (comment || r.ppkComment) : r.ppkComment;
 
         targetReq = { 
           ...r, 
           status, 
-          organizerComment: currentUser?.role === UserRole.ADMIN ? (comment || r.organizerComment) : r.organizerComment,
-          tuComment: currentUser?.role === UserRole.KASUBAG_TU ? (comment || r.tuComment) : r.tuComment,
-          ppkComment: currentUser?.role === UserRole.PPK ? (comment || r.ppkComment) : r.ppkComment,
-          signedDocumentName: signedDocName || r.signedDocumentName,
-          signedDocumentData: signedDocData || r.signedDocumentData,
+          organizerComment: updatedOrganizerComment || '',
+          tuComment: updatedTuComment || '',
+          ppkComment: updatedPpkComment || '',
+          signedDocumentName: signedDocName || r.signedDocumentName || '',
+          signedDocumentData: signedDocData || r.signedDocumentData || '',
           history: [...(r.history || []), newHistory]
         };
         return targetReq;
@@ -477,6 +604,12 @@ const App: React.FC = () => {
           <span className="text-[9px] font-black uppercase tracking-widest">Akun Saya</span>
         </button>
       </nav>
+      {isSyncing && (
+        <div className="fixed bottom-6 right-6 z-[9999] bg-white/90 backdrop-blur-md border border-blue-100 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
+          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Sinkronisasi Data...</p>
+        </div>
+      )}
     </div>
   );
 };
