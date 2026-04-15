@@ -520,11 +520,12 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                       </span>
                     </td>
                   <td className="px-8 py-6">
-                    <div className="text-xs font-bold text-slate-700">{req.trainingTitle}</div>
-                    <div className="text-[10px] text-slate-400 font-medium">{req.proglat}</div>
+                    <div className="text-xs font-bold text-slate-700">{req.trainingTitle || req.programPelatihan || '-'}</div>
+                    <div className="text-[10px] text-slate-400 font-medium">{req.proglat || req.trainingType || '-'}</div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
                     <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex justify-center">
@@ -584,9 +585,9 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                 ) : tuArchive.map((req) => (
                   <tr key={req.id} className="hover:bg-slate-50/30 transition-colors">
                     <td className="px-8 py-6">
-                      <div className="text-xs font-black text-slate-800 uppercase tracking-tight">{req.trainingTitle}</div>
-                      <span className={`text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase border mt-1 inline-block ${VOCATION_COLORS[req.vocation]}`}>
-                        {req.vocation}
+                      <div className="text-xs font-black text-slate-800 uppercase tracking-tight">{req.trainingTitle || req.programPelatihan || '-'}</div>
+                      <span className={`text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase border mt-1 inline-block ${VOCATION_COLORS[req.vocation || req.kejuruan] || 'bg-slate-100'}`}>
+                        {req.vocation || req.kejuruan || '-'}
                       </span>
                     </td>
                     <td className="px-8 py-6">
@@ -597,6 +598,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     </td>
                     <td className="px-8 py-6 whitespace-nowrap">
                       <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
+                      <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex justify-center">

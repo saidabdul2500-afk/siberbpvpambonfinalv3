@@ -444,11 +444,12 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <div className="text-xs font-bold text-slate-700">{req.trainingTitle}</div>
-                    <div className="text-[10px] text-slate-400 font-medium">{req.proglat}</div>
+                    <div className="text-xs font-bold text-slate-700">{req.trainingTitle || req.programPelatihan || '-'}</div>
+                    <div className="text-[10px] text-slate-400 font-medium">{req.proglat || req.trainingType || '-'}</div>
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
                     <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex justify-center">
@@ -499,23 +500,24 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Posisi</th>
               <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tanggal</th>
               <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+              <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Catatan</th>
               <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Berkas</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {otherRequests.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-8 py-20 text-center text-slate-300 font-black uppercase tracking-widest text-xs">
+                <td colSpan={6} className="px-8 py-20 text-center text-slate-300 font-black uppercase tracking-widest text-xs">
                   Belum ada riwayat
                 </td>
               </tr>
             ) : otherRequests.map(req => (
               <tr key={req.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-8 py-6">
-                  <div className="text-sm font-black text-slate-800 uppercase tracking-tight">{req.trainingTitle}</div>
+                  <div className="text-sm font-black text-slate-800 uppercase tracking-tight">{req.trainingTitle || req.programPelatihan || '-'}</div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase border tracking-widest ${VOCATION_COLORS[req.vocation]}`}>
-                      {req.vocation}
+                    <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase border tracking-widest ${VOCATION_COLORS[req.vocation || req.kejuruan] || 'bg-slate-100'}`}>
+                      {req.vocation || req.kejuruan || '-'}
                     </span>
                   </div>
                 </td>
@@ -526,6 +528,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                 </td>
                 <td className="px-8 py-6 whitespace-nowrap">
                   <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
+                  <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                 </td>
                 <td className="px-8 py-6">
                   <div className="flex justify-center flex-col items-center gap-2">
@@ -547,6 +550,20 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                       >
                         📦 Konfirmasi Tiba
                       </button>
+                    )}
+                  </div>
+                </td>
+                <td className="px-8 py-6">
+                  <div className="flex justify-center">
+                    {(req.organizerComment || req.tuComment || req.ppkComment || req.notes || req.status === RequestStatus.REVISION) ? (
+                      <button 
+                        onClick={() => openNoteModal(req)}
+                        className="text-[9px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-4 py-2 rounded-lg transition-all tracking-widest border border-amber-100 shadow-sm active:scale-95 whitespace-nowrap"
+                      >
+                        Lihat Catatan
+                      </button>
+                    ) : (
+                      <span className="text-xs font-bold text-slate-400">-</span>
                     )}
                   </div>
                 </td>
@@ -799,7 +816,27 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                     <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.organizerComment}"</p>
                   </div>
                 )}
-                {/* ... other comments ... */}
+                {selectedRequestForNote.tuComment && (
+                  <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
+                    <p className="text-[10px] font-black text-purple-600 uppercase mb-1">Kasubag TU</p>
+                    <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.tuComment}"</p>
+                  </div>
+                )}
+                {selectedRequestForNote.ppkComment && (
+                  <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+                    <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">PPK</p>
+                    <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.ppkComment}"</p>
+                  </div>
+                )}
+                {selectedRequestForNote.notes && !selectedRequestForNote.organizerComment && !selectedRequestForNote.tuComment && !selectedRequestForNote.ppkComment && (
+                  <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+                    <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Catatan</p>
+                    <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.notes}"</p>
+                  </div>
+                )}
+                {!selectedRequestForNote.organizerComment && !selectedRequestForNote.tuComment && !selectedRequestForNote.ppkComment && !selectedRequestForNote.notes && (
+                  <p className="text-center text-slate-400 italic text-sm py-4">Tidak ada catatan tersedia.</p>
+                )}
               </div>
               <button onClick={() => setIsNoteModalOpen(false)} className="w-full mt-8 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs">Tutup</button>
             </div>

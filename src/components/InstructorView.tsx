@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MaterialRequest, RequestStatus, VocationalCategory, VOCATION_COLORS, PROGLAT_MAPPING, User, TrainingType, PBK_PROGRAMS, PBL_PROGRAMS } from '../types';
-import { formatSafeDate, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
+import { formatSafeDate, formatSafeDateTime, getSafeYear, formatSafeNumber } from '../lib/dateUtils';
 import PDFPreview from './PDFPreview';
 import InstructorManual from './InstructorManual';
 import { motion, AnimatePresence } from 'motion/react';
@@ -414,7 +414,13 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                     <p className="text-sm text-slate-700 font-bold">{selectedRequestForNote.ppkComment}</p>
                   </div>
                 )}
-                {!selectedRequestForNote.organizerComment && !selectedRequestForNote.tuComment && !selectedRequestForNote.ppkComment && (
+                {selectedRequestForNote.notes && !selectedRequestForNote.organizerComment && !selectedRequestForNote.tuComment && !selectedRequestForNote.ppkComment && (
+                  <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl">
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Catatan</p>
+                    <p className="text-sm text-slate-700 font-bold">{selectedRequestForNote.notes}</p>
+                  </div>
+                )}
+                {!selectedRequestForNote.organizerComment && !selectedRequestForNote.tuComment && !selectedRequestForNote.ppkComment && !selectedRequestForNote.notes && (
                   <p className="text-center text-slate-400 italic text-sm py-4">Tidak ada catatan tersedia.</p>
                 )}
               </div>
@@ -438,37 +444,50 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
         </div>
       )}
 
-      {isManualModalOpen && <InstructorManual onClose={() => setIsManualModalOpen(false)} />}
-
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">INSTRUKTUR</h2>
-          <p className="text-slate-500 text-sm">Hanya menampilkan data pengajuan milik <b>{user.displayName}</b>.</p>
+      {isManualModalOpen ? (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setIsManualModalOpen(false)}
+              className="flex items-center gap-2 text-slate-500 hover:text-[#003399] transition-colors font-bold text-sm"
+            >
+              <ChevronLeft size={20} />
+              Kembali ke Pengajuan
+            </button>
+          </div>
+          <InstructorManual />
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setIsManualModalOpen(true)}
-            className="bg-white hover:bg-slate-50 text-[#003399] px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all border border-[#003399] shadow-sm active:scale-95"
-          >
-            Panduan Sistem
-          </button>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="bg-[#003399] hover:bg-[#0d47a1] text-white px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-blue-100 active:scale-95"
-          >
-            {showForm ? 'Tutup Form' : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-                </svg>
-                Buat Pengajuan
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+      ) : (
+        <>
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">INSTRUKTUR</h2>
+              <p className="text-slate-500 text-sm">Hanya menampilkan data pengajuan milik <b>{user.displayName}</b>.</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsManualModalOpen(true)}
+                className="bg-white hover:bg-slate-50 text-[#003399] px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all border border-[#003399] shadow-sm active:scale-95"
+              >
+                Panduan Sistem
+              </button>
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="bg-[#003399] hover:bg-[#0d47a1] text-white px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-blue-100 active:scale-95"
+              >
+                {showForm ? 'Tutup Form' : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Buat Pengajuan
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
 
-      {showForm && (
+          {showForm && (
         <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200 mb-12">
           <div className="p-8">
             <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100">
@@ -700,7 +719,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                     </div>
                   </td>
                   <td className="px-6 py-6 whitespace-nowrap">
-                    <div className="text-xs font-black text-slate-700">{formatSafeDate(req.dateSubmitted)}</div>
+                    <div className="text-xs font-black text-slate-700">{formatSafeDateTime(req.dateSubmitted)}</div>
                     <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{getSafeYear(req.dateSubmitted)}</div>
                   </td>
                   <td className="px-6 py-6">
@@ -720,7 +739,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                   </td>
                   <td className="px-6 py-6">
                     <div className="flex justify-center">
-                      {(req.organizerComment || req.tuComment || req.ppkComment) ? (
+                      {(req.organizerComment || req.tuComment || req.ppkComment || req.notes || req.status === RequestStatus.REVISION) ? (
                         <button 
                           onClick={() => openNoteModal(req)}
                           className="text-[9px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-4 py-2 rounded-lg transition-all tracking-widest border border-amber-100 shadow-sm active:scale-95 whitespace-nowrap"
@@ -728,7 +747,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                           Lihat Catatan
                         </button>
                       ) : (
-                        <span className="text-xs font-bold text-slate-400"></span>
+                        <span className="text-xs font-bold text-slate-400">-</span>
                       )}
                     </div>
                   </td>
@@ -756,6 +775,8 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
             <span className="text-sm font-black uppercase tracking-widest">Berhasil dikirim!</span>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );
