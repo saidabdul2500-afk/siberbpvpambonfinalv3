@@ -260,6 +260,58 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+              {/* Riwayat Catatan */}
+              {(() => {
+                const hasNotes = (selectedRequestForDetail.organizerComment && selectedRequestForDetail.organizerComment !== '-') || 
+                                 (selectedRequestForDetail.tuComment && selectedRequestForDetail.tuComment !== '-') || 
+                                 (selectedRequestForDetail.ppkComment && selectedRequestForDetail.ppkComment !== '-') || 
+                                 (selectedRequestForDetail.notes && selectedRequestForDetail.notes !== '-' && selectedRequestForDetail.notes !== selectedRequestForDetail.trainingTitle && selectedRequestForDetail.notes !== selectedRequestForDetail.proglat) || 
+                                 (selectedRequestForDetail.history && selectedRequestForDetail.history.some(h => h.comment && h.comment !== '-'));
+                                 
+                if (!hasNotes) return null;
+
+                return (
+                  <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 max-h-[300px] overflow-y-auto custom-scrollbar">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Riwayat Catatan</h4>
+                    <div className="space-y-3">
+                      {selectedRequestForDetail.organizerComment && selectedRequestForDetail.organizerComment !== '-' && (
+                        <div className="bg-blue-50 p-3 rounded-xl">
+                          <p className="text-[9px] font-black text-blue-600 uppercase mb-1">Penyelenggara</p>
+                          <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequestForDetail.organizerComment}"</p>
+                        </div>
+                      )}
+                      {selectedRequestForDetail.tuComment && selectedRequestForDetail.tuComment !== '-' && (
+                        <div className="bg-purple-50 p-3 rounded-xl">
+                          <p className="text-[9px] font-black text-purple-600 uppercase mb-1">Catatan TU</p>
+                          <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequestForDetail.tuComment}"</p>
+                        </div>
+                      )}
+                      {selectedRequestForDetail.ppkComment && selectedRequestForDetail.ppkComment !== '-' && (
+                        <div className="bg-emerald-50 p-3 rounded-xl">
+                          <p className="text-[9px] font-black text-emerald-600 uppercase mb-1">Catatan PPK</p>
+                          <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequestForDetail.ppkComment}"</p>
+                        </div>
+                      )}
+                      {selectedRequestForDetail.notes && selectedRequestForDetail.notes !== '-' && selectedRequestForDetail.notes !== selectedRequestForDetail.trainingTitle && selectedRequestForDetail.notes !== selectedRequestForDetail.proglat && (
+                        <div className="bg-amber-50 p-3 rounded-xl">
+                          <p className="text-[9px] font-black text-amber-600 uppercase mb-1">Catatan (Utama)</p>
+                          <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequestForDetail.notes}"</p>
+                        </div>
+                      )}
+                      {selectedRequestForDetail.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
+                        <div key={i} className="bg-white p-3 rounded-xl border border-slate-200">
+                          <div className="flex justify-between items-start mb-1">
+                            <p className="text-[9px] font-black text-slate-600 uppercase">{h.role}</p>
+                            <p className="text-[8px] text-slate-400">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
+                          </div>
+                          <p className="text-[11px] font-bold text-slate-700 italic">"{h.comment}"</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Area Live Preview (Pusat) */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between px-2">
@@ -401,75 +453,66 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
 
               <div className="space-y-4 mb-8">
                 {(() => {
-                  const primary = selectedRequestForNote.organizerComment;
-                  const comment = (primary && primary !== '-' && primary !== '') 
-                    ? primary 
-                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.ADMIN && h.comment && h.comment !== '-').pop()?.comment;
-                  
-                  if (!comment || comment === '-') return null;
-                  return (
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-2xl">
-                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Penyelenggara (Teknis)</p>
-                      <p className="text-sm text-slate-700 font-bold">{comment}</p>
+                  const hasNotes = (selectedRequestForNote.organizerComment && selectedRequestForNote.organizerComment !== '-') || 
+                                   (selectedRequestForNote.tuComment && selectedRequestForNote.tuComment !== '-') || 
+                                   (selectedRequestForNote.ppkComment && selectedRequestForNote.ppkComment !== '-') || 
+                                   (selectedRequestForNote.notes && selectedRequestForNote.notes !== '-' && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat) || 
+                                   (selectedRequestForNote.history && selectedRequestForNote.history.some(h => h.comment && h.comment !== '-'));
+                                   
+                  if (!hasNotes) return (
+                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 text-center">
+                      <p className="text-sm text-slate-400 italic">Belum ada catatan.</p>
                     </div>
                   );
-                })()}
 
-                {(() => {
-                  const primary = selectedRequestForNote.tuComment;
-                  const comment = (primary && primary !== '-' && primary !== '') 
-                    ? primary 
-                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.KASUBAG_TU && h.comment && h.comment !== '-').pop()?.comment;
-                  
-                  if (!comment || comment === '-') return null;
                   return (
-                    <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-2xl">
-                      <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Kasubag TU (Administrasi)</p>
-                      <p className="text-sm text-slate-700 font-bold">{comment}</p>
-                    </div>
-                  );
-                })()}
-
-                {(() => {
-                  const primary = selectedRequestForNote.ppkComment;
-                  const comment = (primary && primary !== '-' && primary !== '') 
-                    ? primary 
-                    : selectedRequestForNote.history?.filter(h => h.role === UserRole.PPK && h.comment && h.comment !== '-').pop()?.comment;
-                  
-                  if (!comment || comment === '-') return null;
-                  return (
-                    <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-2xl">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">PPK (Final)</p>
-                      <p className="text-sm text-slate-700 font-bold">{comment}</p>
-                    </div>
-                  );
-                })()}
-
-                {(selectedRequestForNote.notes && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && selectedRequestForNote.notes !== '-') && (
-                  <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl">
-                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Catatan Instruktur</p>
-                    <p className="text-sm text-slate-700 font-bold">{selectedRequestForNote.notes}</p>
-                  </div>
-                )}
-
-                {/* Activity Log Section */}
-                <div className="mt-8 pt-6 border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Log Aktivitas Catatan</p>
-                  <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                    {selectedRequestForNote.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
-                      <div key={i} className="flex gap-3 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <div className="w-2 h-2 rounded-full bg-blue-400 mt-1 flex-shrink-0" />
-                        <div>
-                          <p className="font-black text-slate-700 uppercase text-[9px] mb-1">{h.role}</p>
-                          <p className="font-bold text-slate-600 italic">"{h.comment}"</p>
-                          <p className="text-[9px] text-slate-400 mt-1">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
+                    <div className="space-y-3">
+                      {selectedRequestForNote.organizerComment && selectedRequestForNote.organizerComment !== '-' && (
+                        <div className="bg-blue-50 p-4 rounded-2xl border-l-4 border-blue-500">
+                          <p className="text-[10px] font-black text-blue-600 uppercase mb-1">Penyelenggara</p>
+                          <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.organizerComment}"</p>
                         </div>
+                      )}
+                      {selectedRequestForNote.tuComment && selectedRequestForNote.tuComment !== '-' && (
+                        <div className="bg-purple-50 p-4 rounded-2xl border-l-4 border-purple-500">
+                          <p className="text-[10px] font-black text-purple-600 uppercase mb-1">Catatan TU</p>
+                          <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.tuComment}"</p>
+                        </div>
+                      )}
+                      {selectedRequestForNote.ppkComment && selectedRequestForNote.ppkComment !== '-' && (
+                        <div className="bg-emerald-50 p-4 rounded-2xl border-l-4 border-emerald-500">
+                          <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">Catatan PPK</p>
+                          <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.ppkComment}"</p>
+                        </div>
+                      )}
+                      {selectedRequestForNote.notes && selectedRequestForNote.notes !== '-' && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && (
+                        <div className="bg-amber-50 p-4 rounded-2xl border-l-4 border-amber-500">
+                          <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Catatan (Utama)</p>
+                          <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.notes}"</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Activity Log Section */}
+              <div className="mt-8 pt-6 border-t border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Log Aktivitas Catatan</p>
+                <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                  {selectedRequestForNote.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
+                    <div key={i} className="flex gap-3 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <div className="w-2 h-2 rounded-full bg-blue-400 mt-1 flex-shrink-0" />
+                      <div>
+                        <p className="font-black text-slate-700 uppercase text-[9px] mb-1">{h.role}</p>
+                        <p className="font-bold text-slate-600 italic">"{h.comment}"</p>
+                        <p className="text-[9px] text-slate-400 mt-1">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
                       </div>
-                    ))}
-                    {(!selectedRequestForNote.history || selectedRequestForNote.history.filter(h => h.comment && h.comment !== '-').length === 0) && (
-                      <p className="text-[10px] text-slate-400 italic text-center py-2">Tidak ada log aktivitas.</p>
-                    )}
-                  </div>
+                    </div>
+                  ))}
+                  {(!selectedRequestForNote.history || selectedRequestForNote.history.filter(h => h.comment && h.comment !== '-').length === 0) && (
+                    <p className="text-[10px] text-slate-400 italic text-center py-2">Tidak ada log aktivitas.</p>
+                  )}
                 </div>
               </div>
             </div>

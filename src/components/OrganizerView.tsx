@@ -46,6 +46,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
   const [isVerified, setIsVerified] = useState(false);
   
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
+  const [isSubmittingRevision, setIsSubmittingRevision] = useState(false);
   const [revisionNote, setRevisionNote] = useState('');
   const [isTTEModalOpen, setIsTTEModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -310,20 +311,29 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
     }
   };
 
-  const handleConfirmRevision = () => {
+  const handleConfirmRevision = async () => {
     if (!revisionNote.trim() || !selectedRequestId) {
       alert("Catatan revisi wajib diisi!");
       return;
     }
-    onAction(selectedRequestId, RequestStatus.REVISION, revisionNote);
-    setIsRevisionModalOpen(false);
-    setIsApprovalModalOpen(false);
-    setSelectedRequestId(null);
-    setRevisionNote('');
     
-    setSuccessMessage("Revisi berhasil dikirim ke Instruktur.");
-    setShowSuccessToast(true);
-    setTimeout(() => setShowSuccessToast(false), 3000);
+    setIsSubmittingRevision(true);
+    
+    try {
+      await onAction(selectedRequestId, RequestStatus.REVISION, revisionNote);
+      setIsSubmittingRevision(false);
+      setIsRevisionModalOpen(false);
+      setIsApprovalModalOpen(false);
+      setSelectedRequestId(null);
+      setRevisionNote('');
+      
+      setSuccessMessage("Revisi berhasil dikirim ke Instruktur.");
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+    } catch (e) {
+      setIsSubmittingRevision(false);
+      alert("Gagal mengirim revisi. Silakan coba lagi.");
+    }
   };
 
   const readFileAsBase64 = (file: File): Promise<string> => {
@@ -723,36 +733,57 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                   <div className="bg-blue-50 rounded-3xl p-6 border border-blue-100">
                     <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4 text-center">Aksi Verifikasi</h4>
                     
-                    {/* Show Revision Comments if any */}
+                    {/* Show All Comments */}
                     {(() => {
                       const req = requests.find(r => r.id === selectedRequestId);
                       if (!req) return null;
                       
-                      const tuNote = req.tuComment || req.history?.filter(h => h.role === UserRole.KASUBAG_TU).pop()?.comment;
-                      const ppkNote = req.ppkComment || req.history?.filter(h => h.role === UserRole.PPK).pop()?.comment;
+                      const hasNotes = (req.organizerComment && req.organizerComment !== '-') || 
+                                       (req.tuComment && req.tuComment !== '-') || 
+                                       (req.ppkComment && req.ppkComment !== '-') || 
+                                       (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle && req.notes !== req.proglat) || 
+                                       (req.history && req.history.some(h => h.comment && h.comment !== '-'));
+                                       
+                      if (!hasNotes) return null;
 
                       return (
-                        <div className="mb-6 space-y-3">
-                          {req.status === RequestStatus.REVISION_TO_ORGANIZER && (
-                            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 animate-pulse">
-                              <p className="text-[10px] font-black text-red-600 uppercase mb-2 flex items-center gap-2">
-                                <AlertCircle size={14} />
-                                Perlu Revisi Segera
-                              </p>
-                              {tuNote && (
-                                <div className="mt-2">
-                                  <p className="text-[9px] font-black text-purple-700 uppercase mb-1">Catatan TU:</p>
-                                  <p className="text-[11px] font-bold text-slate-700 italic bg-white/50 p-2 rounded-lg">"{tuNote}"</p>
+                        <div className="mb-6 bg-white rounded-2xl p-4 border border-slate-100 shadow-sm max-h-[300px] overflow-y-auto custom-scrollbar">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Riwayat Catatan</h4>
+                          <div className="space-y-3">
+                            {req.organizerComment && req.organizerComment !== '-' && (
+                              <div className="bg-blue-50 p-3 rounded-xl">
+                                <p className="text-[9px] font-black text-blue-600 uppercase mb-1">Penyelenggara</p>
+                                <p className="text-[11px] font-bold text-slate-700 italic">"{req.organizerComment}"</p>
+                              </div>
+                            )}
+                            {req.tuComment && req.tuComment !== '-' && (
+                              <div className="bg-purple-50 p-3 rounded-xl">
+                                <p className="text-[9px] font-black text-purple-600 uppercase mb-1">Catatan TU</p>
+                                <p className="text-[11px] font-bold text-slate-700 italic">"{req.tuComment}"</p>
+                              </div>
+                            )}
+                            {req.ppkComment && req.ppkComment !== '-' && (
+                              <div className="bg-emerald-50 p-3 rounded-xl">
+                                <p className="text-[9px] font-black text-emerald-600 uppercase mb-1">Catatan PPK</p>
+                                <p className="text-[11px] font-bold text-slate-700 italic">"{req.ppkComment}"</p>
+                              </div>
+                            )}
+                            {req.notes && req.notes !== '-' && req.notes !== req.trainingTitle && req.notes !== req.proglat && (
+                              <div className="bg-amber-50 p-3 rounded-xl">
+                                <p className="text-[9px] font-black text-amber-600 uppercase mb-1">Instruktur</p>
+                                <p className="text-[11px] font-bold text-slate-700 italic">"{req.notes}"</p>
+                              </div>
+                            )}
+                            {req.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
+                              <div key={i} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <div className="flex justify-between items-start mb-1">
+                                  <p className="text-[9px] font-black text-slate-600 uppercase">{h.role}</p>
+                                  <p className="text-[8px] text-slate-400">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
                                 </div>
-                              )}
-                              {ppkNote && (
-                                <div className="mt-2">
-                                  <p className="text-[9px] font-black text-emerald-700 uppercase mb-1">Catatan PPK:</p>
-                                  <p className="text-[11px] font-bold text-slate-700 italic bg-white/50 p-2 rounded-lg">"{ppkNote}"</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                                <p className="text-[11px] font-bold text-slate-700 italic">"{h.comment}"</p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       );
                     })()}
@@ -865,7 +896,23 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               />
               <div className="flex gap-3">
                 <button onClick={() => setIsRevisionModalOpen(false)} className="flex-1 px-6 py-4 rounded-2xl text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50">Batal</button>
-                <button onClick={handleConfirmRevision} className="flex-[2] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all">KIRIM REVISI</button>
+                <button 
+                  onClick={handleConfirmRevision} 
+                  disabled={isSubmittingRevision}
+                  className={`flex-[2] ${isSubmittingRevision ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all flex items-center justify-center gap-2`}
+                >
+                  {isSubmittingRevision ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      MENGIRIM...
+                    </>
+                  ) : (
+                    "KIRIM REVISI"
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -911,7 +958,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                   if (!comment || comment === '-') return null;
                   return (
                     <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
-                      <p className="text-[10px] font-black text-purple-600 uppercase mb-1">Kasubag TU</p>
+                      <p className="text-[10px] font-black text-purple-600 uppercase mb-1">Catatan TU</p>
                       <p className="text-sm font-bold text-slate-700 italic">"{comment}"</p>
                     </div>
                   );
@@ -926,7 +973,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                   if (!comment || comment === '-') return null;
                   return (
                     <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">PPK</p>
+                      <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">Catatan PPK</p>
                       <p className="text-sm font-bold text-slate-700 italic">"{comment}"</p>
                     </div>
                   );

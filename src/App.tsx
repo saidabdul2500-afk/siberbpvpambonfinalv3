@@ -266,11 +266,11 @@ const App: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const saveRequests = (newReqs: MaterialRequest[], action?: 'ADD' | 'UPDATE', targetReq?: MaterialRequest) => {
+  const saveRequests = async (newReqs: MaterialRequest[], action?: 'ADD' | 'UPDATE', targetReq?: MaterialRequest) => {
     setRequests(sortRequests(newReqs));
     // Trigger sync to Google Sheets
     if (hasLoadedInitialData && action && targetReq) {
-      syncSingleRequest(targetReq, action);
+      await syncSingleRequest(targetReq, action);
     }
   };
 
@@ -296,6 +296,10 @@ const App: React.FC = () => {
         'Catatan Penyelenggara': req.organizerComment,
         'Catatan TU': req.tuComment,
         'Catatan PPK': req.ppkComment,
+        // Add specific keys requested by user for Apps Script
+        'organizerNotes': req.organizerComment,
+        'tuNotes': req.tuComment,
+        'ppkNotes': req.ppkComment,
         'Nama Lampiran': req.attachmentName,
         'Data Lampiran': req.attachmentData,
         'Nama TTE': req.signedDocumentName,
@@ -385,7 +389,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleStatusUpdate = (id: string, status: RequestStatus, comment?: string, signedDocName?: string, signedDocData?: string) => {
+  const handleStatusUpdate = async (id: string, status: RequestStatus, comment?: string, signedDocName?: string, signedDocData?: string) => {
     let targetReq: MaterialRequest | undefined;
     const updated = requests.map(r => {
       if (String(r.id) === String(id)) {
@@ -408,9 +412,28 @@ const App: React.FC = () => {
         const updatedTuComment = currentUser?.role === UserRole.KASUBAG_TU ? (comment || r.tuComment) : r.tuComment;
         const updatedPpkComment = currentUser?.role === UserRole.PPK ? (comment || r.ppkComment) : r.ppkComment;
 
+        // Fallback: Append revision notes to the main 'notes' field so it's saved in the 'Catatan' column
+        // This ensures data isn't lost if the user's Google Sheet doesn't have the specific comment columns
+        let updatedNotes = r.notes || '';
+        if (comment && status === RequestStatus.REVISION && currentUser?.role === UserRole.ADMIN) {
+          // Explicitly set notes to the comment for Organizer revision to Instructor as requested
+          updatedNotes = comment;
+        } else if (comment && (status === RequestStatus.REVISION || status === RequestStatus.REVISION_TO_ORGANIZER || status === RequestStatus.REVISION_FROM_TU || status === RequestStatus.REVISION_FROM_PPK)) {
+          const prefix = currentUser?.role === UserRole.ADMIN ? 'Penyelenggara' :
+                         currentUser?.role === UserRole.KASUBAG_TU ? 'Kasubag TU' :
+                         currentUser?.role === UserRole.PPK ? 'PPK' : 'Sistem';
+          
+          // Only append if it's not already there to prevent duplicates on multiple syncs
+          const noteToAdd = `\n\n[Revisi ${prefix}]: ${comment}`;
+          if (!updatedNotes.includes(`[Revisi ${prefix}]: ${comment}`)) {
+            updatedNotes = updatedNotes + noteToAdd;
+          }
+        }
+
         targetReq = { 
           ...r, 
           status, 
+          notes: updatedNotes.trim(),
           organizerComment: updatedOrganizerComment || '',
           tuComment: updatedTuComment || '',
           ppkComment: updatedPpkComment || '',
@@ -423,7 +446,7 @@ const App: React.FC = () => {
       return r;
     });
     if (targetReq) {
-      saveRequests(updated, 'UPDATE', targetReq);
+      await saveRequests(updated, 'UPDATE', targetReq);
     }
   };
 

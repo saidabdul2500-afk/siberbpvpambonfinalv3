@@ -16,6 +16,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
   const [selectedRequest, setSelectedRequest] = useState<MaterialRequest | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
+  const [isSubmittingRevision, setIsSubmittingRevision] = useState(false);
   const [revisionNote, setRevisionNote] = useState('');
   const [tuNote, setTuNote] = useState('');
   const [isArchiveView, setIsArchiveView] = useState(false);
@@ -160,20 +161,29 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
     setIsRevisionModalOpen(true);
   };
 
-  const handleConfirmRevision = () => {
+  const handleConfirmRevision = async () => {
     if (!revisionNote.trim() || !selectedRequest) {
       alert("Catatan revisi wajib diisi!");
       return;
     }
-    onAction(selectedRequest.id, RequestStatus.REVISION_FROM_TU, revisionNote);
-    setIsRevisionModalOpen(false);
-    setIsDetailModalOpen(false);
-    setSelectedRequest(null);
-    setRevisionNote('');
     
-    setSuccessMessage("Revisi berhasil dikirim ke Penyelenggara.");
-    setShowSuccessToast(true);
-    setTimeout(() => setShowSuccessToast(false), 3000);
+    setIsSubmittingRevision(true);
+    
+    try {
+      await onAction(selectedRequest.id, RequestStatus.REVISION_FROM_TU, revisionNote);
+      setIsSubmittingRevision(false);
+      setIsRevisionModalOpen(false);
+      setIsDetailModalOpen(false);
+      setSelectedRequest(null);
+      setRevisionNote('');
+      
+      setSuccessMessage("Revisi berhasil dikirim ke Penyelenggara.");
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+    } catch (e) {
+      setIsSubmittingRevision(false);
+      alert("Gagal mengirim revisi. Silakan coba lagi.");
+    }
   };
 
   return (
@@ -213,39 +223,69 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                 </div>
               </div>
 
-              {/* Technical Notes Toggle */}
-              {!isArchiveView && (
-                <div className="space-y-4">
-                  <button 
-                    onClick={() => setShowTechnicalNotes(!showTechnicalNotes)}
-                    className="flex items-center gap-2 text-[10px] font-black text-[#003399] uppercase tracking-widest bg-blue-50 px-6 py-3 rounded-xl hover:bg-blue-100 transition-all"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                    {showTechnicalNotes ? 'Sembunyikan Catatan Teknis' : 'Lihat Catatan Teknis (Penyelenggara)'}
-                  </button>
+              {/* Riwayat Catatan */}
+              {(() => {
+                const hasNotes = (selectedRequest.organizerComment && selectedRequest.organizerComment !== '-') || 
+                                 (selectedRequest.tuComment && selectedRequest.tuComment !== '-') || 
+                                 (selectedRequest.ppkComment && selectedRequest.ppkComment !== '-') || 
+                                 (selectedRequest.notes && selectedRequest.notes !== '-' && selectedRequest.notes !== selectedRequest.trainingTitle && selectedRequest.notes !== selectedRequest.proglat) || 
+                                 (selectedRequest.history && selectedRequest.history.some(h => h.comment && h.comment !== '-'));
+                                 
+                if (!hasNotes) return null;
 
-                  {showTechnicalNotes && (
-                    <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 animate-in slide-in-from-top-2 duration-300">
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Riwayat Verifikasi Teknis</h4>
-                      <div className="space-y-4">
-                        {selectedRequest.history?.filter(h => h.role === UserRole.ADMIN).map((log, i) => (
-                          <div key={i} className="flex gap-4">
-                            <div className="w-1 h-auto bg-blue-200 rounded-full"></div>
-                            <div>
-                              <p className="text-xs font-black text-slate-700 uppercase">{log.action}</p>
-                              <p className="text-[10px] text-slate-400 font-bold">{new Date(log.date).toLocaleString('id-ID')}</p>
-                              {log.comment && <p className="mt-2 text-sm text-slate-600 italic">"{log.comment}"</p>}
+                return (
+                  <div className="space-y-4">
+                    <button 
+                      onClick={() => setShowTechnicalNotes(!showTechnicalNotes)}
+                      className="flex items-center gap-2 text-[10px] font-black text-[#003399] uppercase tracking-widest bg-blue-50 px-6 py-3 rounded-xl hover:bg-blue-100 transition-all"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                      {showTechnicalNotes ? 'Sembunyikan Riwayat Catatan' : 'Lihat Riwayat Catatan'}
+                    </button>
+
+                    {showTechnicalNotes && (
+                      <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 animate-in slide-in-from-top-2 duration-300 max-h-[300px] overflow-y-auto custom-scrollbar">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Riwayat Catatan</h4>
+                        <div className="space-y-3">
+                          {selectedRequest.organizerComment && selectedRequest.organizerComment !== '-' && (
+                            <div className="bg-blue-50 p-3 rounded-xl">
+                              <p className="text-[9px] font-black text-blue-600 uppercase mb-1">Penyelenggara</p>
+                              <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.organizerComment}"</p>
                             </div>
-                          </div>
-                        ))}
-                        {(!selectedRequest.history || selectedRequest.history.filter(h => h.role === UserRole.ADMIN).length === 0) && (
-                          <p className="text-xs text-slate-400 italic">Belum ada catatan riwayat teknis.</p>
-                        )}
+                          )}
+                          {selectedRequest.tuComment && selectedRequest.tuComment !== '-' && (
+                            <div className="bg-purple-50 p-3 rounded-xl">
+                              <p className="text-[9px] font-black text-purple-600 uppercase mb-1">Kasubag TU</p>
+                              <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.tuComment}"</p>
+                            </div>
+                          )}
+                          {selectedRequest.ppkComment && selectedRequest.ppkComment !== '-' && (
+                            <div className="bg-emerald-50 p-3 rounded-xl">
+                              <p className="text-[9px] font-black text-emerald-600 uppercase mb-1">PPK</p>
+                              <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.ppkComment}"</p>
+                            </div>
+                          )}
+                          {selectedRequest.notes && selectedRequest.notes !== '-' && selectedRequest.notes !== selectedRequest.trainingTitle && selectedRequest.notes !== selectedRequest.proglat && (
+                            <div className="bg-amber-50 p-3 rounded-xl">
+                              <p className="text-[9px] font-black text-amber-600 uppercase mb-1">Instruktur</p>
+                              <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.notes}"</p>
+                            </div>
+                          )}
+                          {selectedRequest.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
+                            <div key={i} className="bg-white p-3 rounded-xl border border-slate-200">
+                              <div className="flex justify-between items-start mb-1">
+                                <p className="text-[9px] font-black text-slate-600 uppercase">{h.role}</p>
+                                <p className="text-[8px] text-slate-400">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
+                              </div>
+                              <p className="text-[11px] font-bold text-slate-700 italic">"{h.comment}"</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Catatan Administrasi Input */}
               {!isArchiveView && (
@@ -466,7 +506,23 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
               />
               <div className="flex gap-3">
                 <button onClick={() => setIsRevisionModalOpen(false)} className="flex-1 px-6 py-4 rounded-2xl text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50">Batal</button>
-                <button onClick={handleConfirmRevision} className="flex-[2] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all active:scale-95">Kirim Revisi</button>
+                <button 
+                  onClick={handleConfirmRevision} 
+                  disabled={isSubmittingRevision}
+                  className={`flex-[2] ${isSubmittingRevision ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all flex items-center justify-center gap-2`}
+                >
+                  {isSubmittingRevision ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      MENGIRIM...
+                    </>
+                  ) : (
+                    "KIRIM REVISI"
+                  )}
+                </button>
               </div>
             </div>
           </div>

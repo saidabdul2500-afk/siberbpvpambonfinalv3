@@ -16,6 +16,7 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
   const [selectedRequest, setSelectedRequest] = useState<MaterialRequest | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
+  const [isSubmittingRevision, setIsSubmittingRevision] = useState(false);
   const [ppkNote, setPpkNote] = useState('');
   const [revisionNote, setRevisionNote] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
@@ -60,16 +61,25 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
     setIsRevisionModalOpen(true);
   };
 
-  const handleConfirmRevision = () => {
+  const handleConfirmRevision = async () => {
     if (!revisionNote.trim() || !selectedRequest) {
       alert("Catatan revisi wajib diisi!");
       return;
     }
-    onAction(selectedRequest.id, RequestStatus.REVISION_FROM_PPK, revisionNote);
-    setIsRevisionModalOpen(false);
-    setIsReviewModalOpen(false);
-    setSelectedRequest(null);
-    setRevisionNote('');
+    
+    setIsSubmittingRevision(true);
+    
+    try {
+      await onAction(selectedRequest.id, RequestStatus.REVISION_FROM_PPK, revisionNote);
+      setIsSubmittingRevision(false);
+      setIsRevisionModalOpen(false);
+      setIsReviewModalOpen(false);
+      setSelectedRequest(null);
+      setRevisionNote('');
+    } catch (e) {
+      setIsSubmittingRevision(false);
+      alert("Gagal mengirim revisi. Silakan coba lagi.");
+    }
   };
 
   const handleDirectApprove = () => {
@@ -287,31 +297,62 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                   </div>
                 </div>
 
-                <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Riwayat Verifikasi Bertingkat</h4>
-                  <div className="space-y-4">
-                    {/* Penyelenggara */}
-                    <div className="space-y-2">
-                       <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">1. Penyelenggara (Teknis)</p>
-                       {selectedRequest.history?.filter(h => h.role === UserRole.ADMIN).map((log, i) => (
-                         <div key={i} className="pl-3 border-l-2 border-blue-200">
-                           <p className="text-[10px] font-bold text-slate-700">{log.action}</p>
-                           {log.comment && <p className="text-[10px] text-slate-500 italic">"{log.comment}"</p>}
-                         </div>
-                       ))}
+                {/* Riwayat Catatan */}
+                {(() => {
+                  const hasNotes = (selectedRequest.organizerComment && selectedRequest.organizerComment !== '-') || 
+                                   (selectedRequest.tuComment && selectedRequest.tuComment !== '-') || 
+                                   (selectedRequest.ppkComment && selectedRequest.ppkComment !== '-') || 
+                                   (selectedRequest.notes && selectedRequest.notes !== '-' && selectedRequest.notes !== selectedRequest.trainingTitle && selectedRequest.notes !== selectedRequest.proglat) || 
+                                   (selectedRequest.history && selectedRequest.history.some(h => h.comment && h.comment !== '-'));
+                                   
+                  if (!hasNotes) return (
+                    <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Riwayat Catatan</h4>
+                      <p className="text-xs text-slate-400 italic">Belum ada catatan.</p>
                     </div>
-                    {/* TU */}
-                    <div className="space-y-2">
-                       <p className="text-[9px] font-black text-purple-600 uppercase tracking-widest">2. Kasubag TU (Administrasi)</p>
-                       {selectedRequest.history?.filter(h => h.role === UserRole.KASUBAG_TU).map((log, i) => (
-                         <div key={i} className="pl-3 border-l-2 border-purple-200">
-                           <p className="text-[10px] font-bold text-slate-700">{log.action}</p>
-                           {log.comment && <p className="text-[10px] text-slate-500 italic">"{log.comment}"</p>}
-                         </div>
-                       ))}
+                  );
+
+                  return (
+                    <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 max-h-[300px] overflow-y-auto custom-scrollbar">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Riwayat Catatan</h4>
+                      <div className="space-y-3">
+                        {selectedRequest.organizerComment && selectedRequest.organizerComment !== '-' && (
+                          <div className="bg-blue-50 p-3 rounded-xl">
+                            <p className="text-[9px] font-black text-blue-600 uppercase mb-1">Penyelenggara</p>
+                            <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.organizerComment}"</p>
+                          </div>
+                        )}
+                        {selectedRequest.tuComment && selectedRequest.tuComment !== '-' && (
+                          <div className="bg-purple-50 p-3 rounded-xl">
+                            <p className="text-[9px] font-black text-purple-600 uppercase mb-1">Kasubag TU</p>
+                            <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.tuComment}"</p>
+                          </div>
+                        )}
+                        {selectedRequest.ppkComment && selectedRequest.ppkComment !== '-' && (
+                          <div className="bg-emerald-50 p-3 rounded-xl">
+                            <p className="text-[9px] font-black text-emerald-600 uppercase mb-1">PPK</p>
+                            <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.ppkComment}"</p>
+                          </div>
+                        )}
+                        {selectedRequest.notes && selectedRequest.notes !== '-' && selectedRequest.notes !== selectedRequest.trainingTitle && selectedRequest.notes !== selectedRequest.proglat && (
+                          <div className="bg-amber-50 p-3 rounded-xl">
+                            <p className="text-[9px] font-black text-amber-600 uppercase mb-1">Instruktur</p>
+                            <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.notes}"</p>
+                          </div>
+                        )}
+                        {selectedRequest.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
+                          <div key={i} className="bg-white p-3 rounded-xl border border-slate-200">
+                            <div className="flex justify-between items-start mb-1">
+                              <p className="text-[9px] font-black text-slate-600 uppercase">{h.role}</p>
+                              <p className="text-[8px] text-slate-400">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
+                            </div>
+                            <p className="text-[11px] font-bold text-slate-700 italic">"{h.comment}"</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
 
               {/* Program Pelatihan */}
@@ -421,7 +462,23 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
               />
               <div className="flex gap-3">
                 <button onClick={() => setIsRevisionModalOpen(false)} className="flex-1 px-6 py-4 rounded-2xl text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50">Batal</button>
-                <button onClick={handleConfirmRevision} className="flex-[2] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all active:scale-95">Kirim Revisi</button>
+                <button 
+                  onClick={handleConfirmRevision} 
+                  disabled={isSubmittingRevision}
+                  className={`flex-[2] ${isSubmittingRevision ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all flex items-center justify-center gap-2`}
+                >
+                  {isSubmittingRevision ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      MENGIRIM...
+                    </>
+                  ) : (
+                    "KIRIM REVISI"
+                  )}
+                </button>
               </div>
             </div>
           </div>
