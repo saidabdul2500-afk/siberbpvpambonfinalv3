@@ -260,57 +260,13 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-              {/* Riwayat Catatan */}
-              {(() => {
-                const hasNotes = (selectedRequestForDetail.organizerComment && selectedRequestForDetail.organizerComment !== '-') || 
-                                 (selectedRequestForDetail.tuComment && selectedRequestForDetail.tuComment !== '-') || 
-                                 (selectedRequestForDetail.ppkComment && selectedRequestForDetail.ppkComment !== '-') || 
-                                 (selectedRequestForDetail.notes && selectedRequestForDetail.notes !== '-' && selectedRequestForDetail.notes !== selectedRequestForDetail.trainingTitle && selectedRequestForDetail.notes !== selectedRequestForDetail.proglat) || 
-                                 (selectedRequestForDetail.history && selectedRequestForDetail.history.some(h => h.comment && h.comment !== '-'));
-                                 
-                if (!hasNotes) return null;
-
-                return (
-                  <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 max-h-[300px] overflow-y-auto custom-scrollbar">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Riwayat Catatan</h4>
-                    <div className="space-y-3">
-                      {selectedRequestForDetail.organizerComment && selectedRequestForDetail.organizerComment !== '-' && (
-                        <div className="bg-blue-50 p-3 rounded-xl">
-                          <p className="text-[9px] font-black text-blue-600 uppercase mb-1">Penyelenggara</p>
-                          <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequestForDetail.organizerComment}"</p>
-                        </div>
-                      )}
-                      {selectedRequestForDetail.tuComment && selectedRequestForDetail.tuComment !== '-' && (
-                        <div className="bg-purple-50 p-3 rounded-xl">
-                          <p className="text-[9px] font-black text-purple-600 uppercase mb-1">Catatan TU</p>
-                          <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequestForDetail.tuComment}"</p>
-                        </div>
-                      )}
-                      {selectedRequestForDetail.ppkComment && selectedRequestForDetail.ppkComment !== '-' && (
-                        <div className="bg-emerald-50 p-3 rounded-xl">
-                          <p className="text-[9px] font-black text-emerald-600 uppercase mb-1">Catatan PPK</p>
-                          <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequestForDetail.ppkComment}"</p>
-                        </div>
-                      )}
-                      {selectedRequestForDetail.notes && selectedRequestForDetail.notes !== '-' && selectedRequestForDetail.notes !== selectedRequestForDetail.trainingTitle && selectedRequestForDetail.notes !== selectedRequestForDetail.proglat && (
-                        <div className="bg-amber-50 p-3 rounded-xl">
-                          <p className="text-[9px] font-black text-amber-600 uppercase mb-1">Catatan (Utama)</p>
-                          <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequestForDetail.notes}"</p>
-                        </div>
-                      )}
-                      {selectedRequestForDetail.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
-                        <div key={i} className="bg-white p-3 rounded-xl border border-slate-200">
-                          <div className="flex justify-between items-start mb-1">
-                            <p className="text-[9px] font-black text-slate-600 uppercase">{h.role}</p>
-                            <p className="text-[8px] text-slate-400">{new Date(h.date || h.timestamp || Date.now()).toLocaleString('id-ID')}</p>
-                          </div>
-                          <p className="text-[11px] font-bold text-slate-700 italic">"{h.comment}"</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* Riwayat Catatan (Instructor only sees Organizer's latest comment here) */}
+              {selectedRequestForDetail.organizerComment && selectedRequestForDetail.organizerComment !== '-' && (
+                <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100">
+                  <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1">Catatan Penyelenggara</p>
+                  <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForDetail.organizerComment}"</p>
+                </div>
+              )}
 
               {/* Area Live Preview (Pusat) */}
               <div className="space-y-4">
@@ -452,48 +408,16 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
               </p>
 
               <div className="space-y-4 mb-8">
-                {(() => {
-                  const hasNotes = (selectedRequestForNote.organizerComment && selectedRequestForNote.organizerComment !== '-') || 
-                                   (selectedRequestForNote.tuComment && selectedRequestForNote.tuComment !== '-') || 
-                                   (selectedRequestForNote.ppkComment && selectedRequestForNote.ppkComment !== '-') || 
-                                   (selectedRequestForNote.notes && selectedRequestForNote.notes !== '-' && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat) || 
-                                   (selectedRequestForNote.history && selectedRequestForNote.history.some(h => h.comment && h.comment !== '-'));
-                                   
-                  if (!hasNotes) return (
-                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 text-center">
-                      <p className="text-sm text-slate-400 italic">Belum ada catatan.</p>
-                    </div>
-                  );
-
-                  return (
-                    <div className="space-y-3">
-                      {selectedRequestForNote.organizerComment && selectedRequestForNote.organizerComment !== '-' && (
-                        <div className="bg-blue-50 p-4 rounded-2xl border-l-4 border-blue-500">
-                          <p className="text-[10px] font-black text-blue-600 uppercase mb-1">Penyelenggara</p>
-                          <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.organizerComment}"</p>
-                        </div>
-                      )}
-                      {selectedRequestForNote.tuComment && selectedRequestForNote.tuComment !== '-' && (
-                        <div className="bg-purple-50 p-4 rounded-2xl border-l-4 border-purple-500">
-                          <p className="text-[10px] font-black text-purple-600 uppercase mb-1">Catatan TU</p>
-                          <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.tuComment}"</p>
-                        </div>
-                      )}
-                      {selectedRequestForNote.ppkComment && selectedRequestForNote.ppkComment !== '-' && (
-                        <div className="bg-emerald-50 p-4 rounded-2xl border-l-4 border-emerald-500">
-                          <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">Catatan PPK</p>
-                          <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.ppkComment}"</p>
-                        </div>
-                      )}
-                      {selectedRequestForNote.notes && selectedRequestForNote.notes !== '-' && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && (
-                        <div className="bg-amber-50 p-4 rounded-2xl border-l-4 border-amber-500">
-                          <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Catatan (Utama)</p>
-                          <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.notes}"</p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
+                {selectedRequestForNote.organizerComment && selectedRequestForNote.organizerComment !== '-' ? (
+                  <div className="bg-blue-50 p-4 rounded-2xl border-l-4 border-blue-500">
+                    <p className="text-[10px] font-black text-blue-600 uppercase mb-1">Pesan dari Penyelenggara</p>
+                    <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.organizerComment}"</p>
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 text-center">
+                    <p className="text-sm text-slate-400 italic">Belum ada catatan dari Penyelenggara.</p>
+                  </div>
+                )}
               </div>
 
               {/* Activity Log Section */}
@@ -820,14 +744,20 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                       <span className={`inline-block px-3 py-1.5 text-[9px] font-semibold rounded-xl uppercase tracking-widest border shadow-sm whitespace-nowrap min-w-[150px] text-center ${
                         req.status === RequestStatus.BAHAN_TIBA ? 'bg-green-800 text-white border-green-900' :
                         req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-700 border-green-200' :
-                        req.status === RequestStatus.PENDING ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        req.status === RequestStatus.PENDING || req.status === RequestStatus.REVISION_TO_ORGANIZER ? 'bg-amber-50 text-amber-700 border-amber-200' :
                         req.status === RequestStatus.REVISION ? 'bg-red-50 text-red-700 border-red-200' :
-                        req.status === RequestStatus.REVISION_TO_ORGANIZER || req.status === RequestStatus.REVISION_FROM_TU || req.status === RequestStatus.REVISION_FROM_PPK ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        req.status === RequestStatus.REVISION_FROM_TU ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        req.status === RequestStatus.REVISION_FROM_PPK ? 'bg-purple-100 text-purple-800 border-purple-200' :
                         req.status === RequestStatus.APPROVED_TECHNICAL ? 'bg-blue-50 text-blue-700 border-blue-200' :
                         req.status === RequestStatus.APPROVED_ADMIN ? 'bg-purple-100 text-purple-800 border-purple-200' :
                         'bg-slate-50 text-slate-700 border-slate-200'
                       }`}>
-                        {(req.status === RequestStatus.REVISION_TO_ORGANIZER || req.status === RequestStatus.REVISION_FROM_TU || req.status === RequestStatus.REVISION_FROM_PPK) ? 'Sedang Diproses' : req.status}
+                        {(() => {
+                          if (req.status === RequestStatus.REVISION_FROM_TU) return RequestStatus.APPROVED_TECHNICAL;
+                          if (req.status === RequestStatus.REVISION_FROM_PPK) return RequestStatus.APPROVED_ADMIN;
+                          if (req.status === RequestStatus.REVISION_TO_ORGANIZER) return RequestStatus.PENDING;
+                          return req.status;
+                        })()}
                       </span>
                     </div>
                   </td>

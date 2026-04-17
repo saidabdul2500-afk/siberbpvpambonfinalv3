@@ -147,7 +147,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
     return {
       total: requests.length,
       pending: requests.filter(r => r.status === RequestStatus.PENDING || r.status === RequestStatus.REVISION_TO_ORGANIZER || r.status === RequestStatus.REVISION_FROM_TU || r.status === RequestStatus.REVISION_FROM_PPK).length,
-      process: requests.filter(r => [RequestStatus.APPROVED_TECHNICAL, RequestStatus.APPROVED_ADMIN].includes(r.status)).length,
+      process: requests.filter(r => [RequestStatus.APPROVED_TECHNICAL, RequestStatus.APPROVED_ADMIN].includes(r.status) && r.status !== RequestStatus.REVISION_FROM_TU && r.status !== RequestStatus.REVISION_FROM_PPK).length,
       done: requests.filter(r => r.status === RequestStatus.APPROVED_FINAL).length,
       revision: requests.filter(r => r.status === RequestStatus.REVISION).length
     };
@@ -473,11 +473,12 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                   <td className="px-6 py-5">
                     <div className="flex justify-center">
                       <span className={`px-3 py-1.5 text-[9px] font-semibold rounded-full uppercase tracking-widest border min-w-[150px] text-center ${
-                        (req.status === RequestStatus.REVISION || req.status === RequestStatus.REVISION_TO_ORGANIZER || req.status === RequestStatus.REVISION_FROM_TU || req.status === RequestStatus.REVISION_FROM_PPK) ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-600 border-amber-100'
+                        (req.status === RequestStatus.REVISION || req.status === RequestStatus.REVISION_TO_ORGANIZER || req.status === RequestStatus.REVISION_FROM_TU || req.status === RequestStatus.REVISION_FROM_PPK) ? 'bg-red-50 text-red-600 border-red-100' : 
+                        req.status === RequestStatus.APPROVED_TECHNICAL ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                        req.status === RequestStatus.APPROVED_ADMIN ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                        'bg-amber-50 text-amber-600 border-amber-100'
                       }`}>
-                        {req.status === RequestStatus.REVISION_TO_ORGANIZER ? (
-                          req.history && req.history.length > 0 && req.history[req.history.length - 1].role === UserRole.PPK ? 'PERLU REVISI (DARI PPK)' : 'PERLU REVISI (DARI TU)'
-                        ) : req.status}
+                        {req.status}
                       </span>
                     </div>
                   </td>
@@ -578,12 +579,12 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                     <span className={`px-3 py-1.5 text-[9px] font-semibold rounded-full uppercase tracking-widest border min-w-[150px] text-center ${
                       req.status === RequestStatus.BAHAN_TIBA ? 'bg-green-800 text-white border-green-900' :
                       req.status === RequestStatus.APPROVED_FINAL ? 'bg-green-50 text-green-600 border-green-100' : 
-                      (req.status === RequestStatus.REVISION || req.status === RequestStatus.REVISION_TO_ORGANIZER) ? 'bg-red-50 text-red-600 border-red-100' :
+                      (req.status === RequestStatus.REVISION || req.status === RequestStatus.REVISION_TO_ORGANIZER || req.status === RequestStatus.REVISION_FROM_TU || req.status === RequestStatus.REVISION_FROM_PPK) ? 'bg-red-50 text-red-600 border-red-100' :
+                      req.status === RequestStatus.APPROVED_TECHNICAL ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                      req.status === RequestStatus.APPROVED_ADMIN ? 'bg-purple-50 text-purple-600 border-purple-100' :
                       'bg-slate-50 text-slate-600 border-slate-100'
                     }`}>
-                      {req.status === RequestStatus.REVISION_TO_ORGANIZER ? (
-                        req.history && req.history.length > 0 && req.history[req.history.length - 1].role === UserRole.PPK ? 'PERLU REVISI (DARI PPK)' : 'PERLU REVISI (DARI TU)'
-                      ) : req.status}
+                      {req.status}
                     </span>
                     {req.status === RequestStatus.APPROVED_FINAL && (
                       <button 

@@ -16,7 +16,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
   const [selectedRequest, setSelectedRequest] = useState<MaterialRequest | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
-  const [isSubmittingRevision, setIsSubmittingRevision] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [revisionNote, setRevisionNote] = useState('');
   const [tuNote, setTuNote] = useState('');
   const [isArchiveView, setIsArchiveView] = useState(false);
@@ -34,15 +34,19 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  const tuRequests = requests.filter(r => r.status === RequestStatus.APPROVED_TECHNICAL);
-  const tuArchive = requests.filter(r => 
-    r.status === RequestStatus.APPROVED_ADMIN || 
-    r.status === RequestStatus.APPROVED_FINAL || 
-    r.status === RequestStatus.COMPLETED ||
-    (r.status === RequestStatus.REVISION && (r.history?.some(h => h.role === UserRole.KASUBAG_TU) || r.tuComment)) ||
-    (r.status === RequestStatus.REVISION_TO_ORGANIZER && (r.history?.some(h => h.role === UserRole.KASUBAG_TU) || r.tuComment)) ||
-    (r.status === RequestStatus.REVISION_FROM_TU)
-  );
+  const tuRequests = requests
+    .filter(r => r.status === RequestStatus.APPROVED_TECHNICAL)
+    .sort((a, b) => {
+      const timeA = new Date(a.dateSubmitted || 0).getTime();
+      const timeB = new Date(b.dateSubmitted || 0).getTime();
+      return timeB - timeA;
+    });
+  // Separate archive to show all history, sorted by newest first
+  const tuArchive = [...requests].sort((a, b) => {
+    const timeA = new Date(a.dateSubmitted || 0).getTime();
+    const timeB = new Date(b.dateSubmitted || 0).getTime();
+    return timeB - timeA;
+  });
 
   // Body Scroll Lock for Modals
   React.useEffect(() => {
@@ -97,12 +101,14 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
 
   const handleConfirmTTE = async () => {
     if (selectedRequest && uploadedDoc && isVerified) {
+      setIsSubmitting(true);
       try {
         const base64 = await readFileAsBase64(uploadedDoc);
         if (base64.length > 48000) {
           alert("Peringatan: Ukuran file TTE cukup besar. Google Sheets memiliki batas 50.000 karakter per sel. Jika file tidak muncul di pratinjau nantinya, silakan kompres PDF Anda.");
         }
-        onAction(selectedRequest.id, RequestStatus.APPROVED_ADMIN, tuNote, uploadedDoc.name, base64);
+        await onAction(selectedRequest.id, RequestStatus.APPROVED_ADMIN, tuNote, uploadedDoc.name, base64);
+        setIsSubmitting(false);
         setIsTTEModalOpen(false);
         setIsDetailModalOpen(false);
         setSelectedRequest(null);
@@ -112,6 +118,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
         setShowSuccessToast(true);
         setTimeout(() => setShowSuccessToast(false), 3000);
       } catch (e) {
+        setIsSubmitting(false);
         console.error(e);
         alert("Gagal memproses dokumen.");
       }
@@ -167,11 +174,11 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
       return;
     }
     
-    setIsSubmittingRevision(true);
+    setIsSubmitting(true);
     
     try {
       await onAction(selectedRequest.id, RequestStatus.REVISION_FROM_TU, revisionNote);
-      setIsSubmittingRevision(false);
+      setIsSubmitting(false);
       setIsRevisionModalOpen(false);
       setIsDetailModalOpen(false);
       setSelectedRequest(null);
@@ -181,7 +188,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
     } catch (e) {
-      setIsSubmittingRevision(false);
+      setIsSubmitting(false);
       alert("Gagal mengirim revisi. Silakan coba lagi.");
     }
   };
@@ -482,8 +489,22 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
               >
                 Batal
               </button>
-                <button onClick={handleConfirmTTE} className="flex-[2] bg-purple-700 hover:bg-purple-800 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-purple-100 transition-all active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed" disabled={!isVerified}>
-                  Konfirmasi dan Teruskan
+                <button 
+                  onClick={handleConfirmTTE} 
+                  disabled={!isVerified || isSubmitting}
+                  className={`flex-[2] ${!isVerified || isSubmitting ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-purple-700 hover:bg-purple-800 text-white shadow-xl shadow-purple-100'} px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      MEMPROSES...
+                    </>
+                  ) : (
+                    "Konfirmasi dan Teruskan"
+                  )}
                 </button>
             </div>
           </div>
@@ -508,10 +529,10 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                 <button onClick={() => setIsRevisionModalOpen(false)} className="flex-1 px-6 py-4 rounded-2xl text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50">Batal</button>
                 <button 
                   onClick={handleConfirmRevision} 
-                  disabled={isSubmittingRevision}
-                  className={`flex-[2] ${isSubmittingRevision ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all flex items-center justify-center gap-2`}
+                  disabled={isSubmitting}
+                  className={`flex-[2] ${isSubmitting ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-100 transition-all flex items-center justify-center gap-2`}
                 >
-                  {isSubmittingRevision ? (
+                  {isSubmitting ? (
                     <>
                       <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -624,8 +645,19 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="max-w-[150px] truncate text-[10px] font-bold text-slate-500 italic" title={req.organizerComment}>
-                      {req.organizerComment ? `[Penyelenggara]: ${req.organizerComment}` : '-'}
+                    <div className="max-w-[150px] text-[10px] font-bold text-slate-500 italic leading-relaxed">
+                      {(() => {
+                        const comments = [];
+                        if (req.ppkComment && req.ppkComment !== '-') comments.push(`[PPK]: ${req.ppkComment}`);
+                        if (req.tuComment && req.tuComment !== '-') comments.push(`[TU]: ${req.tuComment}`);
+                        if (req.organizerComment && req.organizerComment !== '-') comments.push(`[Penyelenggara]: ${req.organizerComment}`);
+                        if (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle) comments.push(`[Instruktur]: ${req.notes}`);
+                        
+                        if (comments.length === 0) return '-';
+                        return comments.map((c, i) => (
+                          <div key={i} className={i > 0 ? "mt-1 pt-1 border-t border-slate-100" : ""}>{c}</div>
+                        ));
+                      })()}
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
@@ -700,13 +732,24 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-3">
-                        <div className="max-w-[200px] text-[10px] font-bold text-slate-500 italic leading-relaxed truncate">
-                          {req.ppkComment ? `[PPK]: ${req.ppkComment}` : (req.tuComment ? `[TU]: ${req.tuComment}` : (req.organizerComment ? `[Penyelenggara]: ${req.organizerComment}` : (req.notes && req.notes !== req.trainingTitle ? `[Instruktur]: ${req.notes}` : '-')))}
+                        <div className="max-w-[200px] text-[10px] font-bold text-slate-500 italic leading-relaxed">
+                          {(() => {
+                            const comments = [];
+                            if (req.ppkComment && req.ppkComment !== '-') comments.push(`[PPK]: ${req.ppkComment}`);
+                            if (req.tuComment && req.tuComment !== '-') comments.push(`[TU]: ${req.tuComment}`);
+                            if (req.organizerComment && req.organizerComment !== '-') comments.push(`[Penyelenggara]: ${req.organizerComment}`);
+                            if (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle) comments.push(`[Instruktur]: ${req.notes}`);
+                            
+                            if (comments.length === 0) return '-';
+                            return comments.map((c, i) => (
+                              <div key={i} className={i > 0 ? "mt-1 pt-1 border-t border-slate-100" : ""}>{c}</div>
+                            ));
+                          })()}
                         </div>
                         {(req.organizerComment || req.tuComment || req.ppkComment || (req.history && req.history.some(h => h.comment))) && (
                           <button 
                             onClick={() => openNoteModal(req)}
-                            className="text-[8px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-2 py-1 rounded transition-all border border-amber-100"
+                            className="text-[8px] font-black uppercase text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-2 py-1 rounded transition-all border border-amber-100 flex-shrink-0"
                           >
                             Detail
                           </button>

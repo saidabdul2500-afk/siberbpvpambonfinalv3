@@ -561,8 +561,22 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="max-w-[150px] truncate text-[10px] font-bold text-slate-500 italic" title={req.tuComment}>
-                      {req.tuComment ? `[TU]: ${req.tuComment}` : '-'}
+                    <div className="max-w-[150px] text-[10px] font-bold text-slate-500 italic leading-relaxed">
+                      {(() => {
+                        const comments = [];
+                        if (req.organizerComment && req.organizerComment !== '-') comments.push(`[Penyelenggara]: ${req.organizerComment}`);
+                        if (req.tuComment && req.tuComment !== '-') comments.push(`[TU]: ${req.tuComment}`);
+                        if (req.ppkComment && req.ppkComment !== '-') comments.push(`[PPK]: ${req.ppkComment}`);
+                        if (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle) comments.push(`[Instruktur]: ${req.notes}`);
+                        
+                        return comments.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {comments.map((c, i) => (
+                              <div key={i} className="truncate" title={c}>{c}</div>
+                            ))}
+                          </div>
+                        ) : '-';
+                      })()}
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
