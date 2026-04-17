@@ -1,9 +1,11 @@
-# Pastikan menggunakan awalan /api/ agar sesuai dengan kode di App.tsx
-/api/users      https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getUsers  200
-/api/requests   https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getRequests  200
+# 1. API - Ambil Data User
+/api/users         https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getUsers  200
 
-# Jika ada rute sinkronisasi data (sync-single)
-/api/sync       https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec  200
+# 2. API - Ambil Data Pengajuan
+/api/requests      https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getRequests  200
 
-# Aturan standar SPA (Wajib di paling bawah)
-/*              /index.html   200
+# 3. API - Simpan Data (PENTING: Harus pakai sync-single agar tidak 404)
+/api/sync-single   https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec  200
+
+# 4. Aturan Standar SPA (Wajib di Paling Bawah)
+/*                 /index.html   200
