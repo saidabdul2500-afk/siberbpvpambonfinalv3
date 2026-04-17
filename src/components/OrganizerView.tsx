@@ -939,6 +939,21 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               </div>
               <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase">Catatan Pengajuan</h3>
               <div className="space-y-4 mt-6">
+                {/* CATATAN INSTRUKTUR - TOP POSITION */}
+                {(selectedRequestForNote.instructorNotes || (selectedRequestForNote.notes && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && selectedRequestForNote.notes !== '-')) && (
+                  <div className="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-2xl shadow-sm animate-in fade-in slide-in-from-left-2 duration-500">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-amber-100 p-1.5 rounded-lg">
+                        <FileText className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Catatan Instruktur</p>
+                    </div>
+                    <p className="text-sm font-bold text-slate-700 italic leading-relaxed">
+                      "{selectedRequestForNote.instructorNotes || selectedRequestForNote.notes}"
+                    </p>
+                  </div>
+                )}
+
                 {(() => {
                   const primary = selectedRequestForNote.organizerComment;
                   const comment = (primary && primary !== '-' && primary !== '') 
@@ -983,13 +998,6 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                     </div>
                   );
                 })()}
-
-                {(selectedRequestForNote.notes && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && selectedRequestForNote.notes !== '-') && (
-                  <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                    <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Catatan Instruktur</p>
-                    <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.notes}"</p>
-                  </div>
-                )}
 
                 {/* Activity Log Section */}
                 <div className="mt-8 pt-6 border-t border-slate-100">
