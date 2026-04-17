@@ -742,6 +742,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                       const hasNotes = (req.organizerComment && req.organizerComment !== '-') || 
                                        (req.tuComment && req.tuComment !== '-') || 
                                        (req.ppkComment && req.ppkComment !== '-') || 
+                                       (req.instructorNotes && req.instructorNotes !== '-') ||
                                        (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle && req.notes !== req.proglat) || 
                                        (req.history && req.history.some(h => h.comment && h.comment !== '-'));
                                        
@@ -751,6 +752,15 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                         <div className="mb-6 bg-white rounded-2xl p-4 border border-slate-100 shadow-sm max-h-[300px] overflow-y-auto custom-scrollbar">
                           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Riwayat Catatan</h4>
                           <div className="space-y-3">
+                            {(req.instructorNotes || (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle && req.notes !== req.proglat)) && (
+                              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 shadow-sm">
+                                <p className="text-[9px] font-black text-amber-600 uppercase mb-1 flex items-center gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                  Catatan Instruktur
+                                </p>
+                                <p className="text-[11px] font-black text-slate-800 italic leading-relaxed">"{req.instructorNotes || req.notes}"</p>
+                              </div>
+                            )}
                             {req.organizerComment && req.organizerComment !== '-' && (
                               <div className="bg-blue-50 p-3 rounded-xl">
                                 <p className="text-[9px] font-black text-blue-600 uppercase mb-1">Penyelenggara</p>
@@ -767,12 +777,6 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                               <div className="bg-emerald-50 p-3 rounded-xl">
                                 <p className="text-[9px] font-black text-emerald-600 uppercase mb-1">Catatan PPK</p>
                                 <p className="text-[11px] font-bold text-slate-700 italic">"{req.ppkComment}"</p>
-                              </div>
-                            )}
-                            {req.notes && req.notes !== '-' && req.notes !== req.trainingTitle && req.notes !== req.proglat && (
-                              <div className="bg-amber-50 p-3 rounded-xl">
-                                <p className="text-[9px] font-black text-amber-600 uppercase mb-1">Instruktur</p>
-                                <p className="text-[11px] font-bold text-slate-700 italic">"{req.notes}"</p>
                               </div>
                             )}
                             {req.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (

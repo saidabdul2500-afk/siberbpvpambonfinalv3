@@ -235,6 +235,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                 const hasNotes = (selectedRequest.organizerComment && selectedRequest.organizerComment !== '-') || 
                                  (selectedRequest.tuComment && selectedRequest.tuComment !== '-') || 
                                  (selectedRequest.ppkComment && selectedRequest.ppkComment !== '-') || 
+                                 (selectedRequest.instructorNotes && selectedRequest.instructorNotes !== '-') ||
                                  (selectedRequest.notes && selectedRequest.notes !== '-' && selectedRequest.notes !== selectedRequest.trainingTitle && selectedRequest.notes !== selectedRequest.proglat) || 
                                  (selectedRequest.history && selectedRequest.history.some(h => h.comment && h.comment !== '-'));
                                  
@@ -272,10 +273,10 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                               <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.ppkComment}"</p>
                             </div>
                           )}
-                          {selectedRequest.notes && selectedRequest.notes !== '-' && selectedRequest.notes !== selectedRequest.trainingTitle && selectedRequest.notes !== selectedRequest.proglat && (
+                          {(selectedRequest.instructorNotes || (selectedRequest.notes && selectedRequest.notes !== '-' && selectedRequest.notes !== selectedRequest.trainingTitle && selectedRequest.notes !== selectedRequest.proglat)) && (
                             <div className="bg-amber-50 p-3 rounded-xl">
                               <p className="text-[9px] font-black text-amber-600 uppercase mb-1">Instruktur</p>
-                              <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.notes}"</p>
+                              <p className="text-[11px] font-bold text-slate-700 italic">"{selectedRequest.instructorNotes || selectedRequest.notes}"</p>
                             </div>
                           )}
                           {selectedRequest.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
@@ -738,7 +739,8 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                             if (req.ppkComment && req.ppkComment !== '-') comments.push(`[PPK]: ${req.ppkComment}`);
                             if (req.tuComment && req.tuComment !== '-') comments.push(`[TU]: ${req.tuComment}`);
                             if (req.organizerComment && req.organizerComment !== '-') comments.push(`[Penyelenggara]: ${req.organizerComment}`);
-                            if (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle) comments.push(`[Instruktur]: ${req.notes}`);
+                            if (req.instructorNotes && req.instructorNotes !== '-') comments.push(`[Instruktur]: ${req.instructorNotes}`);
+                            else if (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle) comments.push(`[Instruktur]: ${req.notes}`);
                             
                             if (comments.length === 0) return '-';
                             return comments.map((c, i) => (
@@ -830,10 +832,10 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                   );
                 })()}
 
-                {(selectedRequestForNote.notes && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && selectedRequestForNote.notes !== '-') && (
+                {(selectedRequestForNote.instructorNotes || (selectedRequestForNote.notes && selectedRequestForNote.notes !== selectedRequestForNote.trainingTitle && selectedRequestForNote.notes !== selectedRequestForNote.proglat && selectedRequestForNote.notes !== '-')) && (
                   <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl">
                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Catatan Instruktur</p>
-                    <p className="text-sm text-slate-700 font-bold italic">"{selectedRequestForNote.notes}"</p>
+                    <p className="text-sm text-slate-700 font-bold italic">"{selectedRequestForNote.instructorNotes || selectedRequestForNote.notes}"</p>
                   </div>
                 )}
 

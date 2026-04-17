@@ -24,6 +24,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
   const [trainingType, setTrainingType] = useState<TrainingType>(TrainingType.PBK);
   const [kejuruan, setKejuruan] = useState<string>('');
   const [programPelatihan, setProgramPelatihan] = useState('');
+  const [instructorNotes, setInstructorNotes] = useState('');
   const [isProgramModalOpen, setIsProgramModalOpen] = useState(false);
   
   const [file, setFile] = useState<File | null>(null);
@@ -156,6 +157,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
         attachmentData: attachmentData || undefined,
         instructorName: user.displayName,
         status: RequestStatus.PENDING,
+        instructorNotes,
         dateSubmitted: new Date().toISOString(),
         trainingType,
         programPelatihan,
@@ -165,6 +167,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
       setFile(null);
       setPreviewUrl(null);
       setAttachmentData(null);
+      setInstructorNotes('');
       setEditingRequestId(null);
       setShowForm(false);
       setShowSuccessToast(true);
@@ -193,6 +196,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
       setKejuruan(selectedRequestForNote.kejuruan);
       setProgramPelatihan(selectedRequestForNote.programPelatihan);
       setTrainingType(selectedRequestForNote.trainingType);
+      setInstructorNotes(selectedRequestForNote.instructorNotes || '');
       setShowForm(true);
       setIsNoteModalOpen(false);
     }
@@ -408,6 +412,12 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
               </p>
 
               <div className="space-y-4 mb-8">
+                {selectedRequestForNote.instructorNotes && selectedRequestForNote.instructorNotes !== '-' && (
+                  <div className="bg-amber-50 p-4 rounded-2xl border-l-4 border-amber-500">
+                    <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Catatan Anda (Instruktur)</p>
+                    <p className="text-sm font-bold text-slate-700 italic">"{selectedRequestForNote.instructorNotes}"</p>
+                  </div>
+                )}
                 {selectedRequestForNote.organizerComment && selectedRequestForNote.organizerComment !== '-' ? (
                   <div className="bg-blue-50 p-4 rounded-2xl border-l-4 border-blue-500">
                     <p className="text-[10px] font-black text-blue-600 uppercase mb-1">Pesan dari Penyelenggara</p>
@@ -424,7 +434,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
               <div className="mt-8 pt-6 border-t border-slate-100">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Log Aktivitas Catatan</p>
                 <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                  {selectedRequestForNote.history?.filter(h => h.comment && h.comment !== '-').slice().reverse().map((h, i) => (
+                  {selectedRequestForNote.history?.filter(h => h.comment && h.comment !== '-' && (h.role === UserRole.ADMIN || h.role === UserRole.INSTRUCTOR)).slice().reverse().map((h, i) => (
                     <div key={i} className="flex gap-3 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">
                       <div className="w-2 h-2 rounded-full bg-blue-400 mt-1 flex-shrink-0" />
                       <div>
@@ -553,6 +563,17 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                     {programPelatihan || 'Pilih Program Pelatihan...'}
                     <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                   </button>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Catatan Instruktur (Opsional)</label>
+                  <textarea
+                    value={instructorNotes}
+                    onChange={(e) => setInstructorNotes(e.target.value)}
+                    placeholder="Misal: Telah direvisi pada bagian item nomor 1 sesuai arahan"
+                    rows={4}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-100 focus:border-[#003399] transition-all resize-none"
+                  />
                 </div>
                 
                 <div>

@@ -119,6 +119,7 @@ export interface MaterialRequest {
   signedDocumentName?: string;
   signedDocumentData?: string; // Base64 data for signed document
   notes?: string;
+  instructorNotes?: string;
   organizerComment?: string;
   tuComment?: string;
   ppkComment?: string;

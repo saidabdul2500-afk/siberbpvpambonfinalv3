@@ -567,7 +567,8 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                         if (req.organizerComment && req.organizerComment !== '-') comments.push(`[Penyelenggara]: ${req.organizerComment}`);
                         if (req.tuComment && req.tuComment !== '-') comments.push(`[TU]: ${req.tuComment}`);
                         if (req.ppkComment && req.ppkComment !== '-') comments.push(`[PPK]: ${req.ppkComment}`);
-                        if (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle) comments.push(`[Instruktur]: ${req.notes}`);
+                        if (req.instructorNotes && req.instructorNotes !== '-') comments.push(`[Instruktur]: ${req.instructorNotes}`);
+                        else if (req.notes && req.notes !== '-' && req.notes !== req.trainingTitle) comments.push(`[Instruktur]: ${req.notes}`);
                         
                         return comments.length > 0 ? (
                           <div className="flex flex-col gap-1">
