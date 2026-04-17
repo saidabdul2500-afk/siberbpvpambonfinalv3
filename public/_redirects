@@ -1,3 +1,9 @@
-/sync-single  https://script.google.com/macros/s/AKfycbwo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_tslJx1ZTrYz3AbnpmsaA/exec  200
-/get-requests https://script.google.com/macros/s/AKfycbwo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_tslJx1ZTrYz3AbnpmsaA/exec  200
-/*    /index.html   200
+# Pastikan menggunakan awalan /api/ agar sesuai dengan kode di App.tsx
+/api/users      https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getUsers  200
+/api/requests   https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getRequests  200
+
+# Jika ada rute sinkronisasi data (sync-single)
+/api/sync       https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec  200
+
+# Aturan standar SPA (Wajib di paling bawah)
+/*              /index.html   200
