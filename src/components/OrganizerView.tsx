@@ -262,7 +262,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
       
       // Validasi PDF
       if (selectedFile.type !== 'application/pdf') {
-        alert("Mohon unggah file dalam format PDF yang sudah memiliki TTE.");
+        alert("Mohon unggah file dalam format PDF yang sudah selesai ditandatangani.");
         return;
       }
 
@@ -290,7 +290,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
     try {
       const base64 = await readFileAsBase64(uploadedDoc);
       if (base64.length > 48000) {
-        alert("Peringatan: Ukuran file TTE cukup besar. Google Sheets memiliki batas 50.000 karakter per sel. Jika file tidak muncul di pratinjau nantinya, silakan kompres PDF Anda.");
+        alert("Peringatan: Ukuran file Dokumen cukup besar. Google Sheets memiliki batas 50.000 karakter per sel. Jika file tidak muncul di pratinjau nantinya, silakan kompres PDF Anda.");
       }
       onAction(selectedRequestId, RequestStatus.APPROVED_TECHNICAL, undefined, uploadedDoc.name, base64);
       
@@ -637,7 +637,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                         className="text-[9px] font-black uppercase text-emerald-700 hover:text-white bg-emerald-50 hover:bg-emerald-600 px-4 py-2 rounded-xl transition-all tracking-widest border border-emerald-100 flex items-center gap-2"
                       >
                         <CheckCircle2 size={12} />
-                        TTE
+                        DOKUMEN
                       </button>
                     )}
                   </div>
@@ -820,8 +820,8 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             <div className="p-8 overflow-y-auto custom-scrollbar">
-              <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase">Upload Dokumen TTE</h3>
-              <p className="text-slate-500 text-sm mb-6 italic">Unggah berkas PDF yang telah ditandatangani secara elektronik.</p>
+              <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase">UPLOAD DOKUMEN</h3>
+              <p className="text-slate-500 text-sm mb-6 italic">Unggah berkas PDF yang telah selesai ditandatangani</p>
               
               <div className="border-2 border-dashed border-slate-200 rounded-3xl p-12 bg-slate-50 hover:bg-white hover:border-blue-500 transition-all group relative mb-6">
                 <input 
@@ -844,7 +844,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                       <div className="bg-blue-100 p-4 rounded-2xl inline-block mb-4 group-hover:scale-110 transition-transform">
                          <ClipboardCheck className="w-8 h-8 text-blue-700" />
                       </div>
-                      <p className="text-base font-black text-slate-700">Klik atau seret file TTE ke sini</p>
+                      <p className="text-base font-black text-slate-700">Klik atau seret file dokumen di sini</p>
                     </>
                   )}
                 </div>
@@ -855,7 +855,7 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                   <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                     <div className="bg-blue-600 h-full w-1/2 animate-[progress_2s_ease-in-out_infinite]"></div>
                   </div>
-                  <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest">Memverifikasi TTE...</p>
+                  <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest">Memverifikasi Dokumen...</p>
                 </div>
               )}
 

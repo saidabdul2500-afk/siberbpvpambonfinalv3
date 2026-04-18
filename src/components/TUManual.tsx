@@ -34,8 +34,8 @@ const TUManual: React.FC = () => {
     },
     { 
       number: 2, 
-      title: 'Persetujuan TTE', 
-      description: 'Tekan "UPLOAD & SETUJUI TTE" jika usulan sudah sesuai.', 
+      title: 'Persetujuan Dokumen', 
+      description: 'Tekan "UPLOAD & SETUJUI" jika usulan sudah sesuai.', 
       icon: CheckCircle2 
     },
     { 

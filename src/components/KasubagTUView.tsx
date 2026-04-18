@@ -83,7 +83,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.type !== 'application/pdf') {
-        alert("Hanya file PDF yang diperbolehkan untuk dokumen TTE!");
+        alert("Hanya file PDF yang diperbolehkan untuk dokumen!");
         return;
       }
       setUploadedDoc(file);
@@ -104,8 +104,8 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
       setIsSubmitting(true);
       try {
         const base64 = await readFileAsBase64(uploadedDoc);
-        if (base64.length > 48000) {
-          alert("Peringatan: Ukuran file TTE cukup besar. Google Sheets memiliki batas 50.000 karakter per sel. Jika file tidak muncul di pratinjau nantinya, silakan kompres PDF Anda.");
+        if (uploadedDoc.name.length > 30) {
+          alert("Peringatan: Ukuran file Dokumen cukup besar. Google Sheets memiliki batas 50.000 karakter per sel. Jika file tidak muncul di pratinjau nantinya, silakan kompres PDF Anda.");
         }
         await onAction(selectedRequest.id, RequestStatus.APPROVED_ADMIN, tuNote, uploadedDoc.name, base64);
         setIsSubmitting(false);
@@ -377,7 +377,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     className="bg-[#003399] hover:bg-[#0d47a1] text-white px-10 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center gap-3"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                    Upload & Setujui TTE
+                    Upload & Setujui
                   </button>
                 </div>
               )}
@@ -398,8 +398,8 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Upload Dokumen Sudah TTE</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verifikasi Tanda Tangan Elektronik</p>
+                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">UPLOAD DOKUMEN</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verifikasi Berkas Digital</p>
                 </div>
               </div>
               <button onClick={() => setIsTTEModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400">
@@ -410,7 +410,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
             <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
               <div className="bg-purple-50 rounded-2xl p-4 border border-purple-100">
                 <p className="text-[11px] font-bold text-purple-800 leading-relaxed">
-                  Unggah berkas PDF yang telah ditandatangani secara elektronik. Sistem akan memvalidasi keaslian sertifikat digital dan struktur TTE.
+                  Unggah berkas PDF yang telah selesai ditandatangani.
                 </p>
               </div>
 
@@ -437,7 +437,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                       <div className="bg-purple-100 p-4 rounded-2xl inline-block mb-4 group-hover:scale-110 transition-transform">
                          <svg className="w-8 h-8 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                       </div>
-                      <p className="text-base font-black text-slate-700">Klik atau seret file TTE ke sini</p>
+                      <p className="text-base font-black text-slate-700">Klik atau seret file dokumen di sini</p>
                       <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">Hanya format .PDF yang didukung</p>
                     </>
                   )}
@@ -458,7 +458,6 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                   <div className="flex items-center justify-between px-2">
                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pratinjau Berkas Terverifikasi</h4>
                     <div className="flex items-center gap-3">
-                      <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-200">Verified by BSrE</span>
                       <a 
                         href={previewUrl} 
                         target="_blank" 
@@ -475,7 +474,7 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     <iframe 
                       src={`${previewUrl}#toolbar=1&navpanes=0&scrollbar=1`} 
                       className="w-full h-full border-none" 
-                      title="TTE Preview" 
+                      title="Document Preview" 
                       scrolling="yes"
                     />
                   </div>

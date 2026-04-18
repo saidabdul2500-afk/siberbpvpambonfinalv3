@@ -5,37 +5,10 @@ import { User, UserRole, VocationalCategory } from '../types';
 interface ProfileViewProps {
   user: User;
   onLogout: () => void;
+  openChangePassword: () => void;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ user, onLogout }) => {
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-
-  const handlePasswordChange = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      setMessage({ type: 'error', text: 'Konfirmasi password tidak cocok' });
-      return;
-    }
-    if (newPassword.length < 4) {
-      setMessage({ type: 'error', text: 'Password minimal 4 karakter' });
-      return;
-    }
-    
-    // Simulate password change
-    setMessage({ type: 'success', text: 'Password berhasil diperbarui!' });
-    setTimeout(() => {
-      setIsPasswordModalOpen(false);
-      setMessage(null);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    }, 2000);
-  };
-
+const ProfileView: React.FC<ProfileViewProps> = ({ user, onLogout, openChangePassword }) => {
   return (
     <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Profile Header Card */}
@@ -77,7 +50,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onLogout }) => {
 
           {/* Menu Item: Keamanan */}
           <button 
-            onClick={() => setIsPasswordModalOpen(true)}
+            onClick={openChangePassword}
             className="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors group"
           >
             <div className="flex items-center gap-4">
@@ -95,58 +68,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onLogout }) => {
           </button>
         </div>
       </div>
-
-      {/* Password Modal */}
-      {isPasswordModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Ganti Password</h3>
-              <button onClick={() => setIsPasswordModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Password Baru</label>
-                <input
-                  type="password"
-                  required
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold focus:outline-none focus:border-[#003399] transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Konfirmasi Password</label>
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold focus:outline-none focus:border-[#003399] transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              {message && (
-                <div className={`p-4 rounded-2xl text-xs font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                  {message.text}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="w-full bg-[#003399] text-white font-black uppercase tracking-widest py-4 rounded-2xl shadow-lg shadow-blue-100 hover:bg-blue-800 transition-all active:scale-95 mt-4"
-              >
-                Simpan Perubahan
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Logout Button */}
       <button 

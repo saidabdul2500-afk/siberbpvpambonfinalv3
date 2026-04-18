@@ -1,0 +1,4 @@
+/api/users         https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getUsers  200
+/api/requests      https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getRequests  200
+/api/sync-single   https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec  200
+/*                 /index.html   200

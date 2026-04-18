@@ -9,6 +9,7 @@ import PPKView from './components/PPKView';
 import ProfileView from './components/ProfileView';
 import Login from './components/Login';
 import SiberLogo from './components/SiberLogo';
+import ChangePasswordModal from './components/ChangePasswordModal';
 
 type TabType = 'home' | 'profile';
 
@@ -21,6 +22,7 @@ const App: React.FC = () => {
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [pendingSyncIds, setPendingSyncIds] = useState<Set<string>>(new Set());
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   // Helper to sort requests by date descending
   const sortRequests = (reqs: MaterialRequest[]) => {
@@ -573,6 +575,7 @@ const App: React.FC = () => {
             <ProfileView 
               user={currentUser}
               onLogout={handleLogout}
+              openChangePassword={() => setIsChangePasswordModalOpen(true)}
             />
           )}
         </div>
@@ -595,7 +598,12 @@ const App: React.FC = () => {
               
               <div className="flex flex-col items-center md:items-end gap-3">
                  <div className="flex gap-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                    <span className="hover:text-[#003399] cursor-pointer transition-colors">Ganti Password</span>
+                    <span 
+                      onClick={() => setIsChangePasswordModalOpen(true)}
+                      className="hover:text-[#003399] cursor-pointer transition-colors"
+                    >
+                      Ganti Password
+                    </span>
                     <span className="hover:text-[#003399] cursor-pointer transition-colors">Panduan Sistem</span>
                  </div>
                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">© 2026 SIBER BPVP AMBON - Direktorat Jenderal Binalavotas</p>
@@ -635,6 +643,15 @@ const App: React.FC = () => {
           <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
           <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Sinkronisasi Data...</p>
         </div>
+      )}
+
+      {currentUser && (
+        <ChangePasswordModal 
+          isOpen={isChangePasswordModalOpen}
+          onClose={() => setIsChangePasswordModalOpen(false)}
+          user={currentUser}
+          onLogout={handleLogout}
+        />
       )}
     </div>
   );

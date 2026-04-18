@@ -143,7 +143,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return alert("Silakan upload dokumen pengajuan (Excel/PDF) terlebih dahulu!");
+    if (!file) return alert("Silakan upload dokumen pengajuan (PDF) terlebih dahulu!");
 
     setIsSubmitting(true);
     try {
@@ -577,7 +577,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                 </div>
                 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Dokumen Lampiran (Excel/PDF)</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Dokumen Lampiran (PDF)</label>
                   <div
                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
@@ -588,7 +588,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                   >
                     <input
                       type="file"
-                      accept=".xlsx,.xls,.pdf"
+                      accept=".pdf"
                       onChange={handleFileChange}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
@@ -611,7 +611,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                             </svg>
                           </div>
                           <span className="text-sm font-bold text-slate-600">Seret file ke sini atau klik untuk memilih</span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Hanya mendukung: Excel & PDF</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Hanya mendukung: PDF</span>
                         </>
                       )}
                     </div>
