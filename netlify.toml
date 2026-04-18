@@ -1,17 +1,30 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# 1. Jalur Ambil Data User
 [[redirects]]
   from = "/api/users"
   to = "https://script.google.com/macros/s/AKfycbwo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_tslJx1ZTrYz3AbnpmsaA/exec?action=getUsers"
   status = 200
   force = true
 
+# 2. Jalur Ambil Data Pengajuan
 [[redirects]]
   from = "/api/requests"
   to = "https://script.google.com/macros/s/AKfycbwo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_tslJx1ZTrYz3AbnpmsaA/exec?action=getRequests"
   status = 200
   force = true
 
+# 3. Jalur Simpan/Update Data
 [[redirects]]
   from = "/api/sync-single"
   to = "https://script.google.com/macros/s/AKfycbwo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_tslJx1ZTrYz3AbnpmsaA/exec"
   status = 200
   force = true
+
+# 4. Standar Aplikasi React
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
