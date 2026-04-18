@@ -2,13 +2,23 @@
   command = "npm run build"
   publish = "dist"
 
-[functions]
-  directory = "netlify/functions"
+[[redirects]]
+  from = "/api/users"
+  to = "https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getUsers"
+  status = 200
+  force = true
 
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  from = "/api/requests"
+  to = "https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getRequests"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/sync-single"
+  to = "https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/*"
