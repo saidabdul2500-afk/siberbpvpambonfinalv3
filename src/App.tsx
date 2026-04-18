@@ -34,11 +34,26 @@ const App: React.FC = () => {
     });
   };
 
+  /**
+   * Helper to resolve API URL. If VITE_APPS_SCRIPT_URL is provided, 
+   * it calls Apps Script directly (useful for Netlify/Static hosting).
+   */
+  const getApiUrl = (endpoint: string) => {
+    const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
+    if (appsScriptUrl && appsScriptUrl.startsWith('http')) {
+      const url = new URL(appsScriptUrl);
+      if (endpoint === '/api/users') url.searchParams.set('action', 'getUsers');
+      if (endpoint === '/api/requests') url.searchParams.set('action', 'getRequests');
+      return url.toString();
+    }
+    return endpoint;
+  };
+
   // Load users from Google Sheets
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch('/api/users');
+        const response = await fetch(getApiUrl('/api/users'));
         const text = await response.text();
         console.log('Raw data from Apps Script:', text.substring(0, 500));
         try {
@@ -82,7 +97,7 @@ const App: React.FC = () => {
     }
     
     try {
-      const response = await fetch('/api/requests');
+      const response = await fetch(getApiUrl('/api/requests'));
       const text = await response.text();
       console.log('Raw requests data from Apps Script:', text.substring(0, 500));
       
@@ -316,10 +331,10 @@ const App: React.FC = () => {
         items: JSON.stringify(req.items || [])
       };
 
-      const response = await fetch('/api/sync-single', {
+      const response = await fetch(getApiUrl('/api/sync-single'), {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain;charset=utf-8',
         },
         body: JSON.stringify({ 
           action, 
@@ -460,9 +475,9 @@ const App: React.FC = () => {
 
     setIsSyncing(true);
     try {
-      const response = await fetch('/api/delete', {
+      const response = await fetch(getApiUrl('/api/delete'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'deleteRequest', id, role }),
       });
 
