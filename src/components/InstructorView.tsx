@@ -14,13 +14,14 @@ interface InstructorViewProps {
   onSubmit: (req: Partial<MaterialRequest>) => void;
   onLogout: () => void;
   onDelete?: (id: string) => void;
+  isManualModalOpen: boolean;
+  setIsManualModalOpen: (open: boolean) => void;
 }
 
-const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmit, onLogout, onDelete }) => {
+const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmit, onLogout, onDelete, isManualModalOpen, setIsManualModalOpen }) => {
   const [activeMenu, setActiveMenu] = useState<'pengajuan' | 'panduan'>('pengajuan');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [editingRequestId, setEditingRequestId] = useState<string | null>(null);
   const [trainingType, setTrainingType] = useState<TrainingType>(TrainingType.PBK);
   const [kejuruan, setKejuruan] = useState<string>('');
@@ -493,12 +494,6 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
               <p className="text-slate-500 text-sm">Hanya menampilkan data pengajuan milik <b>{user.displayName}</b>.</p>
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => setIsManualModalOpen(true)}
-                className="bg-white hover:bg-slate-50 text-[#003399] px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all border border-[#003399] shadow-sm active:scale-95"
-              >
-                Panduan Sistem
-              </button>
               <button
                 onClick={() => setShowForm(!showForm)}
                 className="bg-[#003399] hover:bg-[#0d47a1] text-white px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-blue-100 active:scale-95"

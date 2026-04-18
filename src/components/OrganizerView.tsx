@@ -29,9 +29,11 @@ interface OrganizerViewProps {
   onAction: (id: string, status: RequestStatus, comment?: string, signedDocName?: string, signedDocData?: string) => void;
   onLogout: () => void;
   onDelete?: (id: string) => void;
+  isManualModalOpen: boolean;
+  setIsManualModalOpen: (open: boolean) => void;
 }
 
-const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLogout, onDelete }) => {
+const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLogout, onDelete, isManualModalOpen, setIsManualModalOpen }) => {
   const [activeMenu, setActiveMenu] = useState<'dashboard' | 'validation' | 'archive' | 'users'>('validation');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,7 +60,6 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
   const [previewFileName, setPreviewFileName] = useState('');
   const [previewItems, setPreviewItems] = useState<MaterialItem[]>([]);
   const [previewData, setPreviewData] = useState<string | undefined>(undefined);
-  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
   // Body Scroll Lock & Escape Key
   React.useEffect(() => {
@@ -1170,17 +1171,8 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               {activeMenu === 'archive' && 'Arsip & Riwayat'}
               {activeMenu === 'users' && 'Daftar Pengguna'}
             </h2>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
-              Selamat Datang, Administrator Penyelenggara
-            </p>
           </div>
           <div className="flex items-center gap-6">
-            <button
-              onClick={() => setIsManualModalOpen(true)}
-              className="bg-white hover:bg-slate-50 text-[#001F54] px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all border border-[#001F54] shadow-sm active:scale-95"
-            >
-              Panduan Sistem
-            </button>
             <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sistem Online</span>

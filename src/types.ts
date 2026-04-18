@@ -52,7 +52,7 @@ export interface User {
 }
 
 export const MOCK_USERS: User[] = [
-  { username: 'admin', role: UserRole.ADMIN, displayName: 'Ferdinandus Rianto Sampe, S.T.' },
+  { username: 'admin', role: UserRole.ADMIN, displayName: 'Abdul Said Bolota, S.Pd.' },
   { username: 'tu', role: UserRole.KASUBAG_TU, displayName: 'Elfinus David Nanlohy, S.T.' },
   { username: 'ppk', role: UserRole.PPK, displayName: 'A. Albian Misuari, S.Psi.' },
   { username: 'fence', role: UserRole.INSTRUCTOR, displayName: 'Fence Manuputty, A.Md.', vocation: VocationalCategory.MANUFAKTUR },

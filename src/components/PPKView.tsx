@@ -11,9 +11,11 @@ interface PPKViewProps {
   requests: MaterialRequest[];
   onAction: (id: string, status: RequestStatus, comment?: string, signedDocName?: string, signedDocData?: string) => void;
   onDelete?: (id: string) => void;
+  isManualModalOpen: boolean;
+  setIsManualModalOpen: (open: boolean) => void;
 }
 
-const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction, onDelete }) => {
+const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction, onDelete, isManualModalOpen, setIsManualModalOpen }) => {
   const [selectedRequest, setSelectedRequest] = useState<MaterialRequest | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
@@ -24,7 +26,6 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction, onDelete })
   const [isArchiveView, setIsArchiveView] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [selectedRequestForNote, setSelectedRequestForNote] = useState<MaterialRequest | null>(null);
-  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
   const ppkRequests = requests.filter(r => r.status === RequestStatus.APPROVED_ADMIN);
   const ppkArchive = requests.filter(r => 
@@ -492,12 +493,6 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction, onDelete })
           <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">Persetujuan Final & Eksekusi Pengadaan</p>
         </div>
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setIsManualModalOpen(true)}
-            className="bg-white hover:bg-slate-50 text-[#003399] px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition-all border border-[#003399] shadow-sm active:scale-95 h-fit mb-1"
-          >
-            Panduan Sistem
-          </button>
           <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
             <div className="text-right">
               <span className="text-3xl font-black text-emerald-600 leading-none">{ppkRequests.length}</span>

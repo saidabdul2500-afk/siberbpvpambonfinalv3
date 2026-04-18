@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [pendingSyncIds, setPendingSyncIds] = useState<Set<string>>(new Set());
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
   // Helper to sort requests by date descending
   const sortRequests = (reqs: MaterialRequest[]) => {
@@ -61,10 +62,11 @@ const App: React.FC = () => {
           if (data.users && Array.isArray(data.users)) {
             const fetchedUsers = data.users.map((u: any) => ({
               username: String(u.username || u['Username'] || u.username || '').trim(),
-              password: String(u.password || u['Password'] || u.password || '').trim(),
-              role: (u.role || u['Role'] || u.role || '').toLowerCase(),
-              displayName: u.displayName || u['Nama Lengkap'] || u.display_name || '',
-              vocation: u.vocation || u['Kejuruan'] || u.vocation || ''
+              password: String(u.password || u['Password'] || u['password'] || '').trim(),
+              role: String(u.role || u['Role'] || u['role'] || '').toLowerCase(),
+              // Aggressive mapping for name based on Apps Script lowercase transformation
+              displayName: u.displayname || u.namalengkap || u['Nama Lengkap'] || u.displayName || u.display_name || u.nama_lengkap || u.nama || u.namainstruktur || u.username || u['Username'] || '',
+              vocation: u.vocation || u['Kejuruan'] || u['kejuruan'] || ''
             })).filter(u => u.username && u.password);
 
             if (fetchedUsers.length > 0) {
@@ -396,6 +398,7 @@ const App: React.FC = () => {
     const updatedReq = { 
       ...req, 
       id: req.id || Math.random().toString(36).substr(2, 9),
+      instructorName: req.instructorName || currentUser?.displayName || '',
       history: isUpdate && existingReq 
         ? [...(existingReq.history || []), newHistory]
         : [newHistory]
@@ -505,14 +508,26 @@ const App: React.FC = () => {
 
   const getPersonalData = () => {
     if (currentUser.role === UserRole.ADMIN) return requests;
-    return requests.filter(r => r.instructorName === currentUser.displayName);
+    // Match by display name or username for backward compatibility (case-insensitive)
+    return requests.filter(r => {
+      const instructorName = String(r.instructorName || '').trim().toLowerCase();
+      const userDisplay = String(currentUser.displayName || '').trim().toLowerCase();
+      const userName = String(currentUser.username || '').trim().toLowerCase();
+      
+      return instructorName === userDisplay || instructorName === userName || instructorName.includes(userName);
+    });
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 selection:bg-blue-100 selection:text-[#003399]">
       {/* Header - Hidden on mobile */}
       <div className="hidden md:block relative">
-        <DashboardHeader user={currentUser} onLogout={handleLogout} />
+        <DashboardHeader 
+        user={currentUser} 
+        onLogout={handleLogout} 
+        onOpenChangePassword={() => setIsChangePasswordModalOpen(true)}
+        onOpenManual={() => setIsManualModalOpen(true)}
+      />
         
         {/* Sync Status Indicator */}
         <div className="absolute top-4 right-64 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur border border-slate-100 shadow-sm">
@@ -590,6 +605,8 @@ const App: React.FC = () => {
                 onSubmit={handleInstructorSubmit}
                 onLogout={handleLogout}
                 onDelete={(id) => handleDeleteRequest(id, currentUser.role)}
+                isManualModalOpen={isManualModalOpen}
+                setIsManualModalOpen={setIsManualModalOpen}
               />
             ) : currentUser.role === UserRole.ADMIN ? (
               <OrganizerView 
@@ -597,6 +614,8 @@ const App: React.FC = () => {
                 onAction={handleStatusUpdate}
                 onLogout={handleLogout}
                 onDelete={(id) => handleDeleteRequest(id, currentUser.role)}
+                isManualModalOpen={isManualModalOpen}
+                setIsManualModalOpen={setIsManualModalOpen}
               />
             ) : currentUser.role === UserRole.KASUBAG_TU ? (
               <KasubagTUView 
@@ -604,6 +623,8 @@ const App: React.FC = () => {
                 requests={requests}
                 onAction={handleStatusUpdate}
                 onDelete={(id) => handleDeleteRequest(id, currentUser.role)}
+                isManualModalOpen={isManualModalOpen}
+                setIsManualModalOpen={setIsManualModalOpen}
               />
             ) : (
               <PPKView 
@@ -611,6 +632,8 @@ const App: React.FC = () => {
                 requests={requests}
                 onAction={handleStatusUpdate}
                 onDelete={(id) => handleDeleteRequest(id, currentUser.role)}
+                isManualModalOpen={isManualModalOpen}
+                setIsManualModalOpen={setIsManualModalOpen}
               />
             )
           ) : (
@@ -618,6 +641,10 @@ const App: React.FC = () => {
               user={currentUser}
               onLogout={handleLogout}
               openChangePassword={() => setIsChangePasswordModalOpen(true)}
+              openManual={() => {
+                setActiveTab('home');
+                setIsManualModalOpen(true);
+              }}
             />
           )}
         </div>
@@ -626,23 +653,18 @@ const App: React.FC = () => {
       {/* Desktop Footer - Hidden on mobile */}
       <footer className="hidden md:block bg-white border-t border-slate-200 py-12 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           <div className="flex flex-col md:flex-row justify-between items-center gap-10">
+           <div className="flex justify-between items-center">
               <div className="flex items-center gap-6">
                  <div className="bg-slate-50 p-2 rounded-xl grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all">
                     <SiberLogo className="h-12 w-12" />
                  </div>
                  <div className="h-12 w-px bg-slate-200"></div>
-                 <div>
+                 <div className="flex flex-col">
                     <h1 className="text-xl font-black text-slate-800 tracking-tighter uppercase">SIBER BPVP AMBON</h1>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Kementerian Ketenagakerjaan RI</p>
+                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1">Direktorat Jenderal Binalavotas</p>
+                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">© 2026 SIBER BPVP AMBON</p>
                  </div>
-              </div>
-              
-              <div className="flex flex-col items-center md:items-end gap-3">
-                 <div className="flex gap-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                    <span className="hover:text-[#003399] cursor-pointer transition-colors">Panduan Sistem</span>
-                 </div>
-                 <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">© 2026 SIBER BPVP AMBON - Direktorat Jenderal Binalavotas</p>
               </div>
            </div>
         </div>
