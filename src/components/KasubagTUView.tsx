@@ -10,9 +10,10 @@ interface KasubagTUViewProps {
   user: User;
   requests: MaterialRequest[];
   onAction: (id: string, status: RequestStatus, comment?: string, signedDocName?: string, signedDocData?: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction }) => {
+const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction, onDelete }) => {
   const [selectedRequest, setSelectedRequest] = useState<MaterialRequest | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
@@ -661,12 +662,22 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button 
-                      onClick={() => handleOpenDetail(req)}
-                      className="text-[10px] font-black uppercase text-[#003399] hover:text-white bg-blue-50 hover:bg-[#003399] px-6 py-3 rounded-xl transition-all tracking-[0.15em] border border-blue-100 shadow-sm active:scale-95"
-                    >
-                      Verifikasi
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      {onDelete && (
+                        <button 
+                          onClick={() => onDelete(req.id)}
+                          className="text-[10px] font-black uppercase border border-red-100 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleOpenDetail(req)}
+                        className="text-[10px] font-black uppercase text-[#003399] hover:text-white bg-blue-50 hover:bg-[#003399] px-6 py-3 rounded-xl transition-all tracking-[0.15em] border border-blue-100 shadow-sm active:scale-95"
+                      >
+                        Verifikasi
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -758,12 +769,22 @@ const KasubagTUView: React.FC<KasubagTUViewProps> = ({ user, requests, onAction 
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <button 
-                        onClick={() => handleOpenDetail(req, true)}
-                        className="text-[9px] font-black uppercase text-slate-500 hover:text-[#003399] bg-slate-100 hover:bg-blue-50 px-4 py-2 rounded-lg transition-all tracking-widest border border-slate-200"
-                      >
-                        Lihat Dokumen
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        {onDelete && (
+                          <button 
+                            onClick={() => onDelete(req.id)}
+                            className="text-[10px] font-black uppercase border border-red-100 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl shadow-sm active:scale-95"
+                          >
+                            Hapus
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleOpenDetail(req, true)}
+                          className="text-[9px] font-black uppercase text-slate-500 hover:text-[#003399] bg-slate-100 hover:bg-blue-50 px-4 py-2 rounded-lg transition-all tracking-widest border border-slate-200"
+                        >
+                          Lihat Dokumen
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

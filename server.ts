@@ -112,6 +112,33 @@ app.post('/api/sync-single', async (req, res) => {
   }
 });
 
+app.post('/api/delete', async (req, res) => {
+  const { action, id, role } = req.body;
+  const scriptUrl = process.env.APPS_SCRIPT_URL;
+
+  if (!scriptUrl) {
+    return res.status(500).json({ error: 'Konfigurasi APPS_SCRIPT_URL belum diatur.' });
+  }
+
+  try {
+    const response = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, id, role }),
+    });
+
+    const result = await response.json();
+    if (result.result === 'success') {
+      res.json({ success: true });
+    } else {
+      throw new Error(result.error || 'Gagal menghapus data via Apps Script');
+    }
+  } catch (error: any) {
+    console.error('Delete error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 async function setupVite() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {

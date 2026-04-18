@@ -10,9 +10,10 @@ interface PPKViewProps {
   user: User;
   requests: MaterialRequest[];
   onAction: (id: string, status: RequestStatus, comment?: string, signedDocName?: string, signedDocData?: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
+const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction, onDelete }) => {
   const [selectedRequest, setSelectedRequest] = useState<MaterialRequest | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
@@ -581,12 +582,22 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button 
-                      onClick={() => handleOpenReview(req)}
-                      className="text-[10px] font-black uppercase text-emerald-600 hover:text-white bg-emerald-50 hover:bg-emerald-600 px-6 py-3 rounded-xl transition-all tracking-[0.15em] border border-emerald-100 shadow-sm active:scale-95"
-                    >
-                      REVIEW & SETUJUI
-                    </button>
+                    <div className="flex justify-end gap-2">
+                       {onDelete && (
+                        <button 
+                          onClick={() => onDelete(req.id)}
+                          className="text-[10px] font-black uppercase border border-red-100 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleOpenReview(req)}
+                        className="text-[10px] font-black uppercase text-emerald-600 hover:text-white bg-emerald-50 hover:bg-emerald-600 px-6 py-3 rounded-xl transition-all tracking-[0.15em] border border-emerald-100 shadow-sm active:scale-95"
+                      >
+                        REVIEW & SETUJUI
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -666,12 +677,22 @@ const PPKView: React.FC<PPKViewProps> = ({ user, requests, onAction }) => {
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <button 
-                        onClick={() => handleOpenReview(req, true)}
-                        className="text-[9px] font-black uppercase text-slate-500 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-all tracking-widest border border-slate-200"
-                      >
-                        Lihat Dokumen
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        {onDelete && (
+                          <button 
+                            onClick={() => onDelete(req.id)}
+                            className="text-[10px] font-black uppercase border border-red-100 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95"
+                          >
+                            Hapus
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleOpenReview(req, true)}
+                          className="text-[9px] font-black uppercase text-slate-500 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-all tracking-widest border border-slate-200"
+                        >
+                          Lihat Dokumen
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

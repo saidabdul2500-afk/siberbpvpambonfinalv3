@@ -5,7 +5,7 @@ import { formatSafeDate, formatSafeDateTime, getSafeYear, formatSafeNumber } fro
 import PDFPreview from './PDFPreview';
 import InstructorManual from './InstructorManual';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, BookOpen, Settings, LogOut, Menu, ChevronLeft } from 'lucide-react';
+import { FileText, BookOpen, LogOut, Menu, ChevronLeft } from 'lucide-react';
 import SiberLogo from './SiberLogo';
 
 interface InstructorViewProps {
@@ -13,10 +13,11 @@ interface InstructorViewProps {
   requests: MaterialRequest[];
   onSubmit: (req: Partial<MaterialRequest>) => void;
   onLogout: () => void;
+  onDelete?: (id: string) => void;
 }
 
-const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmit, onLogout }) => {
-  const [activeMenu, setActiveMenu] = useState<'pengajuan' | 'panduan' | 'settings'>('pengajuan');
+const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmit, onLogout, onDelete }) => {
+  const [activeMenu, setActiveMenu] = useState<'pengajuan' | 'panduan'>('pengajuan');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -805,12 +806,23 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
                     </div>
                   </td>
                   <td className="px-6 py-6 text-right">
-                    <button 
-                      onClick={() => openDetailModal(req)}
-                      className="text-[10px] font-black uppercase px-5 py-2.5 rounded-xl transition-all tracking-[0.15em] border text-[#003399] hover:text-white bg-blue-50 hover:bg-[#003399] border-blue-100 shadow-sm active:scale-95"
-                    >
-                      Detail
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      {req.status === RequestStatus.PENDING && onDelete && (
+                        <button 
+                          onClick={() => onDelete(req.id)}
+                          className="text-[10px] font-black uppercase px-4 py-2.5 rounded-xl transition-all tracking-[0.1em] border border-red-100 text-red-600 hover:bg-red-600 hover:text-white shadow-sm active:scale-95"
+                          title="Hapus Pengajuan"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => openDetailModal(req)}
+                        className="text-[10px] font-black uppercase px-5 py-2.5 rounded-xl transition-all tracking-[0.15em] border text-[#003399] hover:text-white bg-blue-50 hover:bg-[#003399] border-blue-100 shadow-sm active:scale-95"
+                      >
+                        Detail
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

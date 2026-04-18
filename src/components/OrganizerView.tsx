@@ -10,7 +10,6 @@ import {
   ClipboardCheck, 
   Archive, 
   BarChart3, 
-  Settings, 
   Search, 
   Filter, 
   ChevronLeft, 
@@ -29,10 +28,11 @@ interface OrganizerViewProps {
   requests: MaterialRequest[];
   onAction: (id: string, status: RequestStatus, comment?: string, signedDocName?: string, signedDocData?: string) => void;
   onLogout: () => void;
+  onDelete?: (id: string) => void;
 }
 
-const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLogout }) => {
-  const [activeMenu, setActiveMenu] = useState<'dashboard' | 'validation' | 'archive' | 'users' | 'settings'>('validation');
+const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLogout, onDelete }) => {
+  const [activeMenu, setActiveMenu] = useState<'dashboard' | 'validation' | 'archive' | 'users'>('validation');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [vocationFilter, setVocationFilter] = useState<string>('all');
@@ -505,12 +505,22 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                     </div>
                   </td>
                   <td className="px-6 py-5 text-right">
-                    <button 
-                      onClick={() => handleOpenApproval(req)}
-                      className="text-[10px] font-black uppercase text-[#001F54] hover:text-white bg-blue-50 hover:bg-[#001F54] px-4 py-2 rounded-xl transition-all tracking-widest border border-blue-100"
-                    >
-                      VERIFIKASI
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      {onDelete && (
+                        <button 
+                          onClick={() => onDelete(req.id)}
+                          className="text-[10px] font-black uppercase border border-red-100 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition-all tracking-widest"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleOpenApproval(req)}
+                        className="text-[10px] font-black uppercase text-[#001F54] hover:text-white bg-blue-50 hover:bg-[#001F54] px-4 py-2 rounded-xl transition-all tracking-widest border border-blue-100"
+                      >
+                        VERIFIKASI
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -622,6 +632,14 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                 </td>
                 <td className="px-8 py-6 text-right">
                   <div className="flex flex-col gap-2 items-end">
+                    {onDelete && (
+                      <button 
+                        onClick={() => onDelete(req.id)}
+                        className="text-[10px] font-black uppercase border border-red-100 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition-all tracking-widest w-full text-center"
+                      >
+                        Hapus
+                      </button>
+                    )}
                     {req.attachmentData && (
                       <button 
                         onClick={() => openPdfInNewTab(req.attachmentData!)}
@@ -660,7 +678,6 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
           <thead className="bg-slate-50/50">
             <tr>
               <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Username</th>
-              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</th>
               <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama Lengkap</th>
               <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
             </tr>
@@ -669,7 +686,6 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
             {MOCK_USERS.map((user, i) => (
               <tr key={i} className="hover:bg-slate-50 transition-colors">
                 <td className="px-8 py-6 text-sm font-bold text-slate-700">{user.username}</td>
-                <td className="px-8 py-6 text-sm font-mono text-slate-500">{user.password}</td>
                 <td className="px-8 py-6 text-sm font-bold text-slate-800">{user.displayName}</td>
                 <td className="px-8 py-6 text-xs font-bold text-slate-600 uppercase">{user.role}</td>
               </tr>
@@ -1094,7 +1110,6 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
             { id: 'validation', label: 'Validasi Usulan', icon: ClipboardCheck },
             { id: 'archive', label: 'Arsip & Riwayat', icon: Archive },
             { id: 'users', label: 'User', icon: UserIcon },
-            { id: 'settings', label: 'Ganti Password', icon: Settings },
           ].map((item) => (
             <button
               key={item.id}
@@ -1154,7 +1169,6 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
               {activeMenu === 'validation' && 'Validasi Usulan'}
               {activeMenu === 'archive' && 'Arsip & Riwayat'}
               {activeMenu === 'users' && 'Daftar Pengguna'}
-              {activeMenu === 'settings' && 'Ganti Password'}
             </h2>
             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
               Selamat Datang, Administrator Penyelenggara
@@ -1218,12 +1232,6 @@ const OrganizerView: React.FC<OrganizerViewProps> = ({ requests, onAction, onLog
                 {activeMenu === 'validation' && renderValidation()}
                 {activeMenu === 'archive' && renderArchive()}
                 {activeMenu === 'users' && renderUsers()}
-                {activeMenu === 'settings' && (
-                  <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
-                    <Settings size={64} className="mx-auto text-slate-200 mb-6" />
-                    <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">Fitur Ganti Password Sedang Dikembangkan</h3>
-                  </div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>

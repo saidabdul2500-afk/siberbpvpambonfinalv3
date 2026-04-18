@@ -455,6 +455,29 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDeleteRequest = async (id: string, role: UserRole) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus data ini secara permanen dari sistem?')) return;
+
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deleteRequest', id, role }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Gagal menghapus data');
+
+      setRequests(prev => prev.filter(r => String(r.id) !== String(id)));
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      alert(`Gagal menghapus: ${error.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleClearAll = () => {
     if (window.confirm('Apakah Anda yakin ingin menghapus semua pengajuan dan riwayat? Tindakan ini tidak dapat dibatalkan.')) {
       saveRequests([]);
@@ -551,24 +574,28 @@ const App: React.FC = () => {
                 requests={getPersonalData()}
                 onSubmit={handleInstructorSubmit}
                 onLogout={handleLogout}
+                onDelete={(id) => handleDeleteRequest(id, currentUser.role)}
               />
             ) : currentUser.role === UserRole.ADMIN ? (
               <OrganizerView 
                 requests={requests}
                 onAction={handleStatusUpdate}
                 onLogout={handleLogout}
+                onDelete={(id) => handleDeleteRequest(id, currentUser.role)}
               />
             ) : currentUser.role === UserRole.KASUBAG_TU ? (
               <KasubagTUView 
                 user={currentUser}
                 requests={requests}
                 onAction={handleStatusUpdate}
+                onDelete={(id) => handleDeleteRequest(id, currentUser.role)}
               />
             ) : (
               <PPKView 
                 user={currentUser}
                 requests={requests}
                 onAction={handleStatusUpdate}
+                onDelete={(id) => handleDeleteRequest(id, currentUser.role)}
               />
             )
           ) : (
@@ -598,12 +625,6 @@ const App: React.FC = () => {
               
               <div className="flex flex-col items-center md:items-end gap-3">
                  <div className="flex gap-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                    <span 
-                      onClick={() => setIsChangePasswordModalOpen(true)}
-                      className="hover:text-[#003399] cursor-pointer transition-colors"
-                    >
-                      Ganti Password
-                    </span>
                     <span className="hover:text-[#003399] cursor-pointer transition-colors">Panduan Sistem</span>
                  </div>
                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">© 2026 SIBER BPVP AMBON - Direktorat Jenderal Binalavotas</p>
