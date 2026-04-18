@@ -1,26 +1,17 @@
-[build]
-  command = "npm run build"
-  publish = "dist"
-
 [[redirects]]
   from = "/api/users"
-  to = "https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getUsers"
+  to = "https://script.google.com/macros/s/AKfycbwo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_tslJx1ZTrYz3AbnpmsaA/exec?action=getUsers"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/requests"
-  to = "https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec?action=getRequests"
+  to = "https://script.google.com/macros/s/AKfycbwo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_tslJx1ZTrYz3AbnpmsaA/exec?action=getRequests"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/sync-single"
-  to = "https://script.google.com/macros/s/AKfycbuo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_ts1Jx1ZTrYz3AbnpmsaA/exec"
+  to = "https://script.google.com/macros/s/AKfycbwo9NpfRwDRz0jFGxCpRUhfvifIteiXo3FhQ-0McVI8HHGSN_tslJx1ZTrYz3AbnpmsaA/exec"
   status = 200
   force = true
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
