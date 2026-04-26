@@ -28,6 +28,7 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
   const [programPelatihan, setProgramPelatihan] = useState('');
   const [instructorNotes, setInstructorNotes] = useState('');
   const [isProgramModalOpen, setIsProgramModalOpen] = useState(false);
+  const [programSearchQuery, setProgramSearchQuery] = useState('');
   
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -687,31 +688,89 @@ const InstructorView: React.FC<InstructorViewProps> = ({ user, requests, onSubmi
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Pilih Program Pelatihan</h3>
-              <button onClick={() => setIsProgramModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button 
+                onClick={() => {
+                  setIsProgramModalOpen(false);
+                  setProgramSearchQuery('');
+                }} 
+                className="text-slate-400 hover:text-slate-600"
+              >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-              {Object.entries(trainingType === TrainingType.PBK ? PBK_PROGRAMS : PBL_PROGRAMS).map(([vocation, programs]) => (
-                <div key={vocation} className="mb-6">
-                  <h4 className="text-xs font-black text-[#003399] uppercase tracking-widest mb-3">-- {vocation} --</h4>
-                  <div className="space-y-2">
-                    {programs.map(program => (
-                      <button
-                        key={program}
-                        onClick={() => {
-                          setProgramPelatihan(program);
-                          setKejuruan(vocation);
-                          setIsProgramModalOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-[#003399] transition-all"
-                      >
-                        {program}
-                      </button>
-                    ))}
-                  </div>
+            
+            {/* Search Input Area */}
+            <div className="px-8 py-4 bg-slate-50 border-b border-slate-100">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Cari nama program pelatihan..."
+                  value={programSearchQuery}
+                  onChange={(e) => setProgramSearchQuery(e.target.value)}
+                  className="w-full bg-white border-2 border-slate-200 rounded-2xl py-3 pl-12 pr-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-50 focus:border-[#003399] transition-all outline-none shadow-sm"
+                  autoFocus
+                />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                 </div>
-              ))}
+                {programSearchQuery && (
+                  <button 
+                    onClick={() => setProgramSearchQuery('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+              {Object.entries(trainingType === TrainingType.PBK ? PBK_PROGRAMS : PBL_PROGRAMS).map(([vocation, programs]) => {
+                // Filter programs based on search query
+                const filteredPrograms = programs.filter(p => 
+                  p.toLowerCase().includes(programSearchQuery.toLowerCase())
+                );
+
+                // If no programs match in this vocation and search is active, don't show the vocation header
+                if (filteredPrograms.length === 0) return null;
+
+                return (
+                  <div key={vocation} className="mb-6">
+                    <h4 className="text-xs font-black text-[#003399] uppercase tracking-widest mb-3">-- {vocation} --</h4>
+                    <div className="space-y-2">
+                      {filteredPrograms.map(program => (
+                        <button
+                          key={program}
+                          onClick={() => {
+                            setProgramPelatihan(program);
+                            setKejuruan(vocation);
+                            setIsProgramModalOpen(false);
+                            setProgramSearchQuery('');
+                          }}
+                          className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-[#003399] transition-all"
+                        >
+                          {program}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {/* No Results Fallback */}
+              {programSearchQuery && !Object.values(trainingType === TrainingType.PBK ? PBK_PROGRAMS : PBL_PROGRAMS).some(progs => progs.some(p => p.toLowerCase().includes(programSearchQuery.toLowerCase()))) && (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="bg-slate-50 p-6 rounded-full mb-4">
+                    <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-slate-500 font-bold text-sm">Program pelatihan tidak ditemukan</p>
+                  <p className="text-slate-400 text-xs mt-1">Coba kata kunci pencarian yang lain</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

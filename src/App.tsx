@@ -264,26 +264,27 @@ const App: React.FC = () => {
     }
   }, [currentUser]);
 
-  // Auth persistence and cross-tab sync
+  // Auth persistence (using sessionStorage as requested)
   useEffect(() => {
-    const savedUser = localStorage.getItem('simpro_user');
+    const savedUser = sessionStorage.getItem('simpro_user');
+    const path = window.location.pathname;
+
     if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
-    }
-
-    // Listen for changes in other tabs (login/logout)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'simpro_user') {
-        if (e.newValue) {
-          setCurrentUser(JSON.parse(e.newValue));
-        } else {
-          setCurrentUser(null);
-        }
+      const user = JSON.parse(savedUser);
+      setCurrentUser(user);
+      
+      // Jika sudah login tapi mencoba ke /login, arahkan ke dashboard (root / home)
+      if (path === '/login') {
+        window.history.replaceState({}, '', '/');
       }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    } else {
+      // Jika belum login dan mencoba akses halaman selain home atau login
+      if (path !== '/' && path !== '/login') {
+        setCurrentUser(null);
+        // Paksa user kembali ke halaman login
+        window.history.replaceState({}, '', '/login');
+      }
+    }
   }, []);
 
   const saveRequests = async (newReqs: MaterialRequest[], action?: 'ADD' | 'UPDATE', targetReq?: MaterialRequest) => {
@@ -374,14 +375,18 @@ const App: React.FC = () => {
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
-    localStorage.setItem('simpro_user', JSON.stringify(user));
+    sessionStorage.setItem('simpro_user', JSON.stringify(user));
+    // Redirect ke root setelah login berhasil
+    window.history.replaceState({}, '', '/');
   };
 
   const handleLogout = () => {
+    sessionStorage.clear(); // Bersihkan semua sesi
     setCurrentUser(null);
-    setRequests([]); // Clear data on logout to avoid confusion
-    localStorage.removeItem('simpro_user');
+    setRequests([]); // Hapus data dari state
     setActiveTab('home');
+    // Pastikan kembali ke halaman login (sesuai permintaan user)
+    window.location.href = '/login'; 
   };
 
   const handleInstructorSubmit = (req: Partial<MaterialRequest>) => {
